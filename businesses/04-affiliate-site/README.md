@@ -18,8 +18,10 @@
 ```
 data/products.json                  AIライティングツール比較データ
 data/products-task-management.json  AIタスク管理ツール比較データ
+data/products-meeting-notes.json    AI議事録・文字起こしツール比較データ
 site/index.html                     AIライティングツール比較ページ
 site/task-management.html           AIタスク管理ツール比較ページ
+site/meeting-notes.html             AI議事録・文字起こしツール比較ページ
 ```
 
 ## 注意
@@ -29,3 +31,4 @@ site/task-management.html           AIタスク管理ツール比較ページ
 - 2026-09-25: 事業立ち上げ。「AIライティングツール比較」カテゴリの初期データとページを作成。
 - 2026-09-25: 「AIタスク管理ツール比較」カテゴリを追加し、サイト内ナビゲーションを整備。
 - 2026-09-25: 両カテゴリのプレースホルダー商品名([商品名 要確認])を実在の主要ツール(AIライティング: ChatGPT Plus / Jasper AI / Copy.ai / Writesonic、AIタスク管理: Notion AI / Todoist / ClickUp / Motion)に差し替え。一般的に公開されている機能概要をもとに記載し、価格・プラン詳細は引き続き「要確認」として公式サイトへのリンク(`official_url`)を追加。比較ページに「良い点/注意点」と「公式サイトで確認」ボタンを追加し、アフィリエイトリンクである旨の告知文を明確化。
+- 2026-09-25: 新カテゴリ「AI議事録・文字起こしツール比較」を追加(Otter.ai / Fireflies.ai / tl;dv / Fathom)。価格は未確認のため「要確認」とし公式サイトへのリンクを掲載。3カテゴリ共通のサイト内ナビゲーションを更新。

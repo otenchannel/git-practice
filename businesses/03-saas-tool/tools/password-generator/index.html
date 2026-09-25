@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>パスワード生成ツール</title>
+<style>
+  body { font-family: -apple-system, "Hiragino Sans", sans-serif; max-width: 960px; margin: 32px auto; padding: 0 16px; color: #222; }
+  h1 { font-size: 1.5rem; }
+  .desc { color: #555; font-size: 0.9rem; margin-bottom: 20px; }
+  #result { width: 100%; font-family: monospace; font-size: 1.1rem; padding: 10px; box-sizing: border-box; letter-spacing: 0.03em; }
+  .options { margin-top: 16px; display: flex; flex-direction: column; gap: 10px; max-width: 420px; }
+  .length-row { display: flex; align-items: center; gap: 10px; }
+  .length-row label { flex: 0 0 auto; }
+  .length-row input[type="range"] { flex: 1; }
+  .length-row output { font-variant-numeric: tabular-nums; width: 2.5em; text-align: right; }
+  .checks { display: flex; flex-wrap: wrap; gap: 12px; }
+  .checks label { display: flex; align-items: center; gap: 4px; font-size: 0.9rem; }
+  .controls { display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap; }
+  button { padding: 10px 20px; font-size: 0.95rem; cursor: pointer; border: none; border-radius: 6px; background: #2b6cb0; color: white; }
+  button.secondary { background: #718096; }
+  button:hover { opacity: 0.9; }
+  #error { color: #c53030; margin-top: 8px; font-size: 0.9rem; }
+  #strength { margin-top: 10px; font-size: 0.85rem; }
+  .strength-bar { height: 6px; border-radius: 3px; background: #e2e8f0; margin-top: 4px; overflow: hidden; }
+  .strength-bar-fill { height: 100%; transition: width 0.2s, background-color 0.2s; }
+  .privacy { margin-top: 16px; font-size: 0.8rem; color: #888; }
+  .support { display: inline-block; margin-top: 12px; padding: 8px 16px; border: 1px solid #ddd; border-radius: 6px; color: #555; text-decoration: none; font-size: 0.85rem; }
+  .support:hover { background: #f7f7f7; }
+</style>
+</head>
+<body>
+  <h1>パスワード生成ツール</h1>
+  <p class="desc">安全な乱数を使ってランダムなパスワードを生成します。すべてブラウザ内で処理され、生成した内容は外部に送信されません。</p>
+
+  <input type="text" id="result" readonly aria-label="生成されたパスワード" placeholder="ここに生成結果が表示されます">
+
+  <div id="strength" aria-live="polite"></div>
+
+  <div class="options">
+    <div class="length-row">
+      <label for="length">文字数</label>
+      <input type="range" id="length" min="4" max="64" value="16">
+      <output id="lengthValue" for="length">16</output>
+    </div>
+    <div class="checks">
+      <label><input type="checkbox" id="useLower" checked> 小文字 (a-z)</label>
+      <label><input type="checkbox" id="useUpper" checked> 大文字 (A-Z)</label>
+      <label><input type="checkbox" id="useDigits" checked> 数字 (0-9)</label>
+      <label><input type="checkbox" id="useSymbols"> 記号 (!@#$...)</label>
+      <label><input type="checkbox" id="excludeAmbiguous"> 紛らわしい文字を除外 (l, 1, I, O, 0)</label>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button onclick="generate()">生成する</button>
+    <button class="secondary" onclick="copyResult()">コピー</button>
+  </div>
+
+  <div id="error" role="alert"></div>
+
+  <script>
+    const CHARSETS = {
+      lower: 'abcdefghijklmnopqrstuvwxyz',
+      upper: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
+      digits: '0123456789',
+      symbols: '!@#$%^&*()-_=+[]{};:,.<>?/'
+    };
+    const AMBIGUOUS = 'l1IO0';
+
+    function buildCharset(options) {
+      let charset = '';
+      if (options.useLower) charset += CHARSETS.lower;
+      if (options.useUpper) charset += CHARSETS.upper;
+      if (options.useDigits) charset += CHARSETS.digits;
+      if (options.useSymbols) charset += CHARSETS.symbols;
+      if (options.excludeAmbiguous) {
+        charset = charset.split('').filter(c => !AMBIGUOUS.includes(c)).join('');
+      }
+      return charset;
+    }
+
+    function randomIndex(max) {
+      // crypto.getRandomValuesは剰余バイアスを避けるため棄却サンプリングを行う
+      const range = 256 - (256 % max);
+      const buf = new Uint8Array(1);
+      let value;
+      do {
+        crypto.getRandomValues(buf);
+        value = buf[0];
+      } while (value >= range);
+      return value % max;
+    }
+
+    function generatePassword(length, options) {
+      const charset = buildCharset(options);
+      if (!charset) {
+        throw new Error('少なくとも1つの文字種類を選択してください');
+      }
+      let result = '';
+      for (let i = 0; i < length; i++) {
+        result += charset[randomIndex(charset.length)];
+      }
+      return { password: result, charsetSize: charset.length };
+    }
+
+    function estimateStrength(length, charsetSize) {
+      if (charsetSize === 0) return { bits: 0, label: '-', color: '#e2e8f0' };
+      const bits = Math.round(length * Math.log2(charsetSize));
+      let label, color;
+      if (bits < 40) { label = '弱い'; color = '#c53030'; }
+      else if (bits < 60) { label = '普通'; color = '#dd6b20'; }
+      else if (bits < 90) { label = '強い'; color = '#2f855a'; }
+      else { label = '非常に強い'; color = '#276749'; }
+      return { bits, label, color };
+    }
+
+    function getOptions() {
+      return {
+        useLower: document.getElementById('useLower').checked,
+        useUpper: document.getElementById('useUpper').checked,
+        useDigits: document.getElementById('useDigits').checked,
+        useSymbols: document.getElementById('useSymbols').checked,
+        excludeAmbiguous: document.getElementById('excludeAmbiguous').checked
+      };
+    }
+
+    function generate() {
+      const errorDiv = document.getElementById('error');
+      const resultInput = document.getElementById('result');
+      const strengthDiv = document.getElementById('strength');
+      errorDiv.textContent = '';
+      const length = parseInt(document.getElementById('length').value, 10);
+      try {
+        const { password, charsetSize } = generatePassword(length, getOptions());
+        resultInput.value = password;
+        const strength = estimateStrength(length, charsetSize);
+        strengthDiv.innerHTML = `強度: <strong style="color:${strength.color}">${strength.label}</strong>(約${strength.bits}bit)` +
+          `<div class="strength-bar"><div class="strength-bar-fill" style="width:${Math.min(100, strength.bits)}%; background:${strength.color}"></div></div>`;
+      } catch (e) {
+        resultInput.value = '';
+        strengthDiv.innerHTML = '';
+        errorDiv.textContent = e.message;
+      }
+    }
+
+    function copyResult() {
+      const resultInput = document.getElementById('result');
+      if (!resultInput.value) return;
+      resultInput.select();
+      navigator.clipboard.writeText(resultInput.value).catch(() => {
+        document.execCommand('copy');
+      });
+    }
+
+    document.getElementById('length').addEventListener('input', (e) => {
+      document.getElementById('lengthValue').textContent = e.target.value;
+    });
+
+    // 初期表示用に1件生成
+    generate();
+  </script>
+
+  <p class="privacy">※ プライバシー保護のため、生成したパスワードはサーバーに送信・保存されません(ブラウザ内で完結)。</p>
+
+  <a class="support" href="https://buy.stripe.com/test_6oUeVccm12Kz0RAb185Vu00" target="_blank" rel="noopener">☕ このツールの開発を支援する</a>
+</body>
+</html>

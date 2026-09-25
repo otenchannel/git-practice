@@ -1,0 +1,63 @@
+{
+  "category": "AIライティングツール比較",
+  "updated": "2026-09-25",
+  "note": "商品名・一般的な機能は公開情報をもとに記載していますが、価格・詳細プランは変動するため「要確認」の項目は公式サイトで必ず確認してください。アフィリエイトリンクはプログラム未承認のためプレースホルダーです。",
+  "products": [
+    {
+      "id": "chatgpt-plus",
+      "name": "ChatGPT Plus (OpenAI)",
+      "official_url": "https://openai.com/chatgpt/pricing/",
+      "price": "要確認(公式サイトで最新の月額料金を確認)",
+      "features": [
+        "対話形式での文章生成・要約・翻訳・リライト",
+        "最新モデルへの優先アクセス",
+        "画像生成・ファイル分析など汎用マルチモーダル機能",
+        "カスタムGPTによる用途特化のカスタマイズ"
+      ],
+      "affiliate_link": "#affiliate-link-pending",
+      "pros": ["汎用性が高く、ライティング以外の用途にも使える", "拡張機能・カスタムGPTのエコシステムが豊富"],
+      "cons": ["ライティング特化ツールに比べ、テンプレートやSEO向け機能は少ない"]
+    },
+    {
+      "id": "jasper-ai",
+      "name": "Jasper AI",
+      "official_url": "https://www.jasper.ai/pricing",
+      "price": "要確認(公式サイトで最新プランを確認)",
+      "features": [
+        "マーケティング・広告コピー生成に特化したテンプレート群",
+        "ブランドボイス(文体・トンマナ)の学習・統一機能",
+        "チームでのコンテンツ制作ワークフロー機能"
+      ],
+      "affiliate_link": "#affiliate-link-pending",
+      "pros": ["マーケティングチーム向けの機能が充実している"],
+      "cons": ["個人利用にはプラン価格がやや高めとされる(要確認)"]
+    },
+    {
+      "id": "copy-ai",
+      "name": "Copy.ai",
+      "official_url": "https://www.copy.ai/pricing",
+      "price": "要確認(無料プランの有無・範囲は公式サイトで確認)",
+      "features": [
+        "広告コピー・SNS投稿・ブログ記事など多数のテンプレート",
+        "マーケティング業務向けのワークフロー自動化機能"
+      ],
+      "affiliate_link": "#affiliate-link-pending",
+      "pros": ["無料プランがあり、試しやすいとされる(要確認)"],
+      "cons": ["高度な自動化機能は上位プランが必要な場合がある"]
+    },
+    {
+      "id": "writesonic",
+      "name": "Writesonic",
+      "official_url": "https://writesonic.com/pricing",
+      "price": "要確認(公式サイトで最新プランを確認)",
+      "features": [
+        "SEOを意識した長文記事作成機能",
+        "チャット形式のアシスタント機能",
+        "AIによる画像生成・編集機能"
+      ],
+      "affiliate_link": "#affiliate-link-pending",
+      "pros": ["SEO記事作成に強みがあるとされる"],
+      "cons": ["プランによって使える機能の差が大きい(要確認)"]
+    }
+  ]
+}

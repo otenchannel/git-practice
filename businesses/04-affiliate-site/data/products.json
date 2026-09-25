@@ -1,0 +1,25 @@
+{
+  "category": "AIライティングツール比較",
+  "updated": "2026-09-25",
+  "note": "価格・機能は要確認フラグ付きのプレースホルダーです。公開前に公式サイトで検証してください。",
+  "products": [
+    {
+      "id": "sample-tool-a",
+      "name": "[商品名 要確認]",
+      "price": "要確認",
+      "features": ["要確認: 主要機能1", "要確認: 主要機能2"],
+      "affiliate_link": "#affiliate-link-pending",
+      "pros": ["要確認"],
+      "cons": ["要確認"]
+    },
+    {
+      "id": "sample-tool-b",
+      "name": "[商品名 要確認]",
+      "price": "要確認",
+      "features": ["要確認: 主要機能1", "要確認: 主要機能2"],
+      "affiliate_link": "#affiliate-link-pending",
+      "pros": ["要確認"],
+      "cons": ["要確認"]
+    }
+  ]
+}

@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AIライティングツール比較</title>
+<style>
+  body { font-family: -apple-system, "Hiragino Sans", sans-serif; max-width: 800px; margin: 40px auto; padding: 0 16px; color: #222; }
+  h1 { font-size: 1.6rem; }
+  .notice { background: #fff8e1; border: 1px solid #f0d878; padding: 12px 16px; border-radius: 6px; margin-bottom: 24px; font-size: 0.9rem; }
+  .product { border: 1px solid #ddd; border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+  .product h2 { margin-top: 0; font-size: 1.2rem; }
+  .badge { display: inline-block; background: #eee; color: #666; font-size: 0.75rem; padding: 2px 8px; border-radius: 4px; margin-left: 6px; }
+  .cta { display: inline-block; margin-top: 8px; padding: 8px 16px; background: #ccc; color: #666; border-radius: 6px; text-decoration: none; pointer-events: none; }
+  footer { margin-top: 40px; font-size: 0.8rem; color: #888; }
+</style>
+</head>
+<body>
+  <h1>AIライティングツール比較</h1>
+  <div class="notice">
+    本ページはプロトタイプです。掲載中の価格・機能は未確認のプレースホルダーであり、アフィリエイトリンクも未設定です。本記事にはアフィリエイトリンクを含む予定です。
+  </div>
+  <div id="products"></div>
+  <footer>
+    最終更新: <span id="updated"></span>
+  </footer>
+
+  <script>
+    fetch('../data/products.json')
+      .then(r => r.json())
+      .then(data => {
+        document.getElementById('updated').textContent = data.updated;
+        const container = document.getElementById('products');
+        data.products.forEach(p => {
+          const div = document.createElement('div');
+          div.className = 'product';
+          div.innerHTML = `
+            <h2>${p.name} <span class="badge">要確認</span></h2>
+            <p>価格: ${p.price}</p>
+            <p>特徴: ${p.features.join(' / ')}</p>
+            <a class="cta" href="${p.affiliate_link}">詳細を見る(準備中)</a>
+          `;
+          container.appendChild(div);
+        });
+      })
+      .catch(() => {
+        document.getElementById('products').textContent = 'データを読み込めませんでした。';
+      });
+  </script>
+</body>
+</html>

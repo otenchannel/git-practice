@@ -19,9 +19,11 @@
 data/products.json                  AIライティングツール比較データ
 data/products-task-management.json  AIタスク管理ツール比較データ
 data/products-meeting-notes.json    AI議事録・文字起こしツール比較データ
+data/products-noise-cancelling-headphones.json  ノイズキャンセリングイヤホン・ヘッドホン比較データ
 site/index.html                     AIライティングツール比較ページ
 site/task-management.html           AIタスク管理ツール比較ページ
 site/meeting-notes.html             AI議事録・文字起こしツール比較ページ
+site/noise-cancelling-headphones.html  ノイズキャンセリングイヤホン・ヘッドホン比較ページ
 ```
 
 ## 注意
@@ -32,3 +34,5 @@ site/meeting-notes.html             AI議事録・文字起こしツール比較
 - 2026-09-25: 「AIタスク管理ツール比較」カテゴリを追加し、サイト内ナビゲーションを整備。
 - 2026-09-25: 両カテゴリのプレースホルダー商品名([商品名 要確認])を実在の主要ツール(AIライティング: ChatGPT Plus / Jasper AI / Copy.ai / Writesonic、AIタスク管理: Notion AI / Todoist / ClickUp / Motion)に差し替え。一般的に公開されている機能概要をもとに記載し、価格・プラン詳細は引き続き「要確認」として公式サイトへのリンク(`official_url`)を追加。比較ページに「良い点/注意点」と「公式サイトで確認」ボタンを追加し、アフィリエイトリンクである旨の告知文を明確化。
 - 2026-09-25: 新カテゴリ「AI議事録・文字起こしツール比較」を追加(Otter.ai / Fireflies.ai / tl;dv / Fathom)。価格は未確認のため「要確認」とし公式サイトへのリンクを掲載。3カテゴリ共通のサイト内ナビゲーションを更新。
+- 2026-09-25: 新カテゴリ「ノイズキャンセリングイヤホン・ヘッドホン比較」を追加(Sony WH-1000XM5 / Bose QuietComfort Ultra Headphones / Sennheiser Momentum 4 Wireless / Apple AirPods Pro 第2世代)。ソフトウェア3カテゴリに加え、事業概要にある「生産性ガジェット」領域のコンテンツを初めて追加。価格・詳細スペックは未確認のため「要確認」とし公式サイトへのリンクを掲載。4カテゴリ共通のサイト内ナビゲーションを更新。
+  - 親セッションからの通達(フェーズ1: 基盤構築 → フェーズ2: プラン提示 → フェーズ3: 公開)を受領。本ログまでの作業はすべてフェーズ1(商品データ整備)の範囲内であり、公開作業(本番デプロイ・アフィリエイトリンクの実リンク化等)には未着手。フェーズ3に進む前には必ずユーザーへ公開プランを提示し承認を得る。

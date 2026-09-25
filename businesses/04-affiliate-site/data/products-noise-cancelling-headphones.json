@@ -1,0 +1,65 @@
+{
+  "category": "ノイズキャンセリングイヤホン・ヘッドホン比較",
+  "updated": "2026-09-25",
+  "note": "商品名・一般的な特徴は公開情報をもとに記載していますが、価格・詳細スペックは変動するため「要確認」の項目は公式サイトで必ず確認してください。アフィリエイトリンクはプログラム未承認のためプレースホルダーです。",
+  "products": [
+    {
+      "id": "sony-wh-1000xm5",
+      "name": "Sony WH-1000XM5",
+      "official_url": "https://www.sony.jp/headphone/products/WH-1000XM5/",
+      "price": "要確認(公式サイトで最新価格を確認)",
+      "features": [
+        "業界トップクラスとされるノイズキャンセリング性能",
+        "軽量設計",
+        "マルチポイント接続対応",
+        "専用アプリによる音質・ノイズキャンセリング調整"
+      ],
+      "affiliate_link": "#affiliate-link-pending",
+      "pros": ["ノイズキャンセリング性能の評価が高いとされる"],
+      "cons": ["装着感は好みが分かれるとの声もある(要確認)"]
+    },
+    {
+      "id": "bose-quietcomfort-ultra",
+      "name": "Bose QuietComfort Ultra Headphones",
+      "official_url": "https://www.bose.co.jp/ja_jp/products/headphones/over_ear_headphones/quietcomfort-ultra-headphones.html",
+      "price": "要確認(公式サイトで最新価格を確認)",
+      "features": [
+        "高いノイズキャンセリング性能",
+        "イマーシブオーディオモード",
+        "快適な装着感を重視した設計"
+      ],
+      "affiliate_link": "#affiliate-link-pending",
+      "pros": ["快適な装着感との評価が多いとされる"],
+      "cons": ["価格帯が競合製品と比べ高めとされる(要確認)"]
+    },
+    {
+      "id": "sennheiser-momentum-4",
+      "name": "Sennheiser Momentum 4 Wireless",
+      "official_url": "https://www.sennheiser-hearing.com/ja-JP/p/momentum-4-wireless/",
+      "price": "要確認(公式サイトで最新価格を確認)",
+      "features": [
+        "長時間バッテリー駆動(公称値は要確認)",
+        "快適な装着感",
+        "高音質とされるドライバー設計"
+      ],
+      "affiliate_link": "#affiliate-link-pending",
+      "pros": ["バッテリー持ちの良さが特徴とされる"],
+      "cons": ["ノイズキャンセリング性能は上位2製品に劣るとの評価もある(要確認)"]
+    },
+    {
+      "id": "apple-airpods-pro",
+      "name": "Apple AirPods Pro(第2世代)",
+      "official_url": "https://www.apple.com/jp/airpods-pro/",
+      "price": "要確認(公式サイトで最新価格を確認)",
+      "features": [
+        "コンパクトなカナル型デザイン",
+        "iPhone・Apple製品とのシームレスな連携",
+        "空間オーディオ対応",
+        "外部音取り込みモード(外音取り込み)"
+      ],
+      "affiliate_link": "#affiliate-link-pending",
+      "pros": ["iPhoneユーザーとの親和性が高い"],
+      "cons": ["Android等の他機種では一部機能が制限される場合がある"]
+    }
+  ]
+}

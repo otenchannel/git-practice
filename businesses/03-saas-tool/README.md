@@ -14,10 +14,13 @@
 - [ ] 独自ドメイン(任意)
 - [x] Stripeアカウント開設(サンドボックス、publishable key取得済み)
 - [ ] Stripe本番環境の有効化(本人確認・銀行口座登録)
-- [ ] Stripeダッシュボードで投げ銭用のPayment Linkを作成し、各ツールの `#donation-link-pending` を実リンクに差し替え
+- [x] Stripeダッシュボードで投げ銭用のPayment Linkを作成し、各ツールに実リンクを設置
+- [ ] 本番環境が有効化されたら、テスト用リンク(`buy.stripe.com/test_...`)を本番用リンクに差し替え
 
 ## Stripe連携について
 バックエンドを持たない静的サイト構成のため、**Stripe Payment Link**(ダッシュボードでノーコード作成できる決済リンク)を使う方針。secret keyをリポジトリに置く必要はない。publishable keyは `stripe-config.js` に保存済み(公開可能な値のため問題なし)。
+
+現在のPayment Linkはサンドボックス(テスト環境)のものです。実際に入金を受け取るには、Stripe側で本番環境を有効化(本人確認・銀行口座登録)した後、本番用のPayment Linkを再発行して差し替える必要があります。
 
 ## ディレクトリ構成
 ```
@@ -31,3 +34,4 @@ stripe-config.js       Stripe publishable key
 - 2026-09-25: 第2弾ツール「JSON整形ツール」を実装(整形/圧縮/コピー機能)。
 - 2026-09-25: Stripeサンドボックスのpublishable keyを登録。
 - 2026-09-25: 投げ銭型で収益化する方針を決定。各ツールに「開発を支援する」ボタンを設置(Payment Linkは未作成のためプレースホルダー)。
+- 2026-09-25: Stripe Payment Link(サンドボックス、任意のチップ・Managed Payments経由)を発行し、両ツールに実リンクを設置。

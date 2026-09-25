@@ -24,9 +24,10 @@
 
 ## ディレクトリ構成
 ```
-tools/text-diff/       テキスト差分比較ツール(第1弾、動作可能)
-tools/json-formatter/  JSON整形ツール(第2弾、動作可能)
-stripe-config.js       Stripe publishable key
+tools/text-diff/           テキスト差分比較ツール(第1弾、動作可能)
+tools/json-formatter/      JSON整形ツール(第2弾、動作可能)
+tools/password-generator/  パスワード生成ツール(第3弾、動作可能)
+stripe-config.js           Stripe publishable key
 ```
 
 ## 運用ログ
@@ -35,3 +36,4 @@ stripe-config.js       Stripe publishable key
 - 2026-09-25: Stripeサンドボックスのpublishable keyを登録。
 - 2026-09-25: 投げ銭型で収益化する方針を決定。各ツールに「開発を支援する」ボタンを設置(Payment Linkは未作成のためプレースホルダー)。
 - 2026-09-25: Stripe Payment Link(サンドボックス、任意のチップ・Managed Payments経由)を発行し、両ツールに実リンクを設置。
+- 2026-09-25: 第3弾ツール「パスワード生成ツール」を実装。`crypto.getRandomValues`と棄却サンプリング(剰余バイアス回避)による安全な乱数生成、文字種類選択、紛らわしい文字の除外、強度表示(概算ビット数)に対応。Node.jsで文字数・エラー処理・文字分布の一様性・強度計算のロジックを単体検証済み。既存の投げ銭リンクを設置。次の候補: ホスティング設定、またはStripe本番化のサポート。

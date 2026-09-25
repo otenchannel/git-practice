@@ -12,14 +12,21 @@
 ## セットアップチェックリスト(人間側)
 - [ ] Vercel / Netlify / GitHub Pages でのホスティング設定
 - [ ] 独自ドメイン(任意)
-- [ ] 利用実績が出たらStripe導入を検討
+- [x] Stripeアカウント開設(サンドボックス、publishable key取得済み)
+- [ ] Stripe本番環境の有効化(本人確認・銀行口座登録)
+- [ ] 有料化する具体的な機能を決定し、Stripe Payment Linkを作成
+
+## Stripe連携について
+バックエンドを持たない静的サイト構成のため、**Stripe Payment Link**(ダッシュボードでノーコード作成できる決済リンク)を使う方針。secret keyをリポジトリに置く必要はない。publishable keyは `stripe-config.js` に保存済み(公開可能な値のため問題なし)。
 
 ## ディレクトリ構成
 ```
 tools/text-diff/       テキスト差分比較ツール(第1弾、動作可能)
 tools/json-formatter/  JSON整形ツール(第2弾、動作可能)
+stripe-config.js       Stripe publishable key
 ```
 
 ## 運用ログ
 - 2026-09-25: 事業立ち上げ。第1弾ツール「テキスト差分比較ツール」を実装(バックエンド不要、単体HTML)。
 - 2026-09-25: 第2弾ツール「JSON整形ツール」を実装(整形/圧縮/コピー機能)。
+- 2026-09-25: Stripeサンドボックスのpublishable keyを登録。

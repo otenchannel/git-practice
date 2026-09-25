@@ -1,9 +1,9 @@
-# 事業02: AIニュースレター
+# 事業02: AIニュースレター「AI Ops Weekly」
 
 担当エージェント: `.claude/agents/newsletter-agent.md`
 
 ## 概要
-AI・生産性ツール関連の実務者向けに、週刊(想定)で配信するニュースレター。
+AI・生産性ツール関連の実務者向けに、週刊(想定)で配信するニュースレター。パブリケーション名は「AI Ops Weekly」(Substack: `soramathis.substack.com`)。
 
 ## 収益モデル
 - 開始時は無料配信で購読者を増やす
@@ -37,3 +37,4 @@ SETUP_GUIDE.md 配信基盤(beehiiv/Substack)セットアップの人間向け�
 - 2026-09-25: 第4号ドラフトを新規作成。今回はモデルリリースに偏らず、セキュリティ(Cisco Talosの自律型AIマルウェア「CLOSEDQUORUM」)・業界の安全基準団体設立の動き・Amazon Seller CentralのAIエージェント連携という3テーマで構成。ピックアップ解説はCLOSEDQUORUMを深掘りし、実務Tipsも外部AIエージェントへの権限付与の注意点にした。各項目に出典リンクを明記。
 - 2026-09-25: 親セッションより「基盤構築」の定義を訂正する方針連絡を受領。号のドラフト作成は基盤構築ではなく、配信基盤(beehiiv/Substack)のアカウント開設・ブランド設定こそが基盤構築であると明確化。ユーザーへ実際の登録作業の着手可否を確認する。
 - 2026-09-25: ユーザーがSubstackでアカウント・パブリケーションを開設(`soramathis.substack.com`)。スクリーンショットで確認しダッシュボード(Home)画面まで到達。次はニュースレター名・説明文・配信用メールアドレスの設定を案内。
+- 2026-09-25: パブリケーション名を「AI Ops Weekly」に決定。第1〜4号ドラフトのタイトルとREADMEに反映。Substack側の「Set up the basics」画面での実際の名称登録はユーザー操作待ち(URL `soramathis.substack.com` は変更しない前提)。

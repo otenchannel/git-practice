@@ -11,7 +11,11 @@
   .product { border: 1px solid #ddd; border-radius: 8px; padding: 16px; margin-bottom: 16px; }
   .product h2 { margin-top: 0; font-size: 1.2rem; }
   .badge { display: inline-block; background: #eee; color: #666; font-size: 0.75rem; padding: 2px 8px; border-radius: 4px; margin-left: 6px; }
-  .cta { display: inline-block; margin-top: 8px; padding: 8px 16px; background: #ccc; color: #666; border-radius: 6px; text-decoration: none; pointer-events: none; }
+  .cta { display: inline-block; margin-top: 8px; margin-right: 8px; padding: 8px 16px; background: #ccc; color: #666; border-radius: 6px; text-decoration: none; pointer-events: none; }
+  .official { display: inline-block; margin-top: 8px; padding: 8px 16px; background: #1a73e8; color: #fff; border-radius: 6px; text-decoration: none; }
+  .pros-cons { display: flex; gap: 24px; margin: 8px 0; font-size: 0.9rem; }
+  .pros-cons > div { flex: 1; }
+  .pros-cons ul { margin: 4px 0; padding-left: 20px; }
   footer { margin-top: 40px; font-size: 0.8rem; color: #888; }
   nav a { margin-right: 12px; font-size: 0.85rem; }
 </style>
@@ -20,7 +24,7 @@
   <nav><a href="./index.html">AIライティングツール比較</a> | <a href="./task-management.html">AIタスク管理ツール比較</a></nav>
   <h1>AIライティングツール比較</h1>
   <div class="notice">
-    本ページはプロトタイプです。掲載中の価格・機能は未確認のプレースホルダーであり、アフィリエイトリンクも未設定です。本記事にはアフィリエイトリンクを含む予定です。
+    本ページはプロトタイプです。「要確認」の項目(主に価格・プラン詳細)は公式サイトで必ずご確認ください。アフィリエイトプログラム未承認のため、アフィリエイトリンクは未設定です。本記事には将来的にアフィリエイトリンクを含む予定です(その旨は掲載時に明記します)。
   </div>
   <div id="products"></div>
   <footer>
@@ -37,10 +41,15 @@
           const div = document.createElement('div');
           div.className = 'product';
           div.innerHTML = `
-            <h2>${p.name} <span class="badge">要確認</span></h2>
+            <h2>${p.name}</h2>
             <p>価格: ${p.price}</p>
             <p>特徴: ${p.features.join(' / ')}</p>
-            <a class="cta" href="${p.affiliate_link}">詳細を見る(準備中)</a>
+            <div class="pros-cons">
+              <div><strong>良い点</strong><ul>${p.pros.map(x => `<li>${x}</li>`).join('')}</ul></div>
+              <div><strong>注意点</strong><ul>${p.cons.map(x => `<li>${x}</li>`).join('')}</ul></div>
+            </div>
+            <a class="official" href="${p.official_url}" target="_blank" rel="noopener noreferrer">公式サイトで確認</a>
+            <a class="cta" href="${p.affiliate_link}">詳細を見る(準備中・アフィリエイトリンク予定)</a>
           `;
           container.appendChild(div);
         });

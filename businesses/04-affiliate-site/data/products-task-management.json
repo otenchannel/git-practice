@@ -1,25 +1,59 @@
 {
   "category": "AIタスク管理ツール比較",
   "updated": "2026-09-25",
-  "note": "価格・機能は要確認フラグ付きのプレースホルダーです。公開前に公式サイトで検証してください。",
+  "note": "商品名・一般的な機能は公開情報をもとに記載していますが、価格・詳細プランは変動するため「要確認」の項目は公式サイトで必ず確認してください。アフィリエイトリンクはプログラム未承認のためプレースホルダーです。",
   "products": [
     {
-      "id": "sample-task-a",
-      "name": "[商品名 要確認]",
-      "price": "要確認",
-      "features": ["要確認: AI自動優先度付け", "要確認: チーム共有機能"],
+      "id": "notion-ai",
+      "name": "Notion AI",
+      "official_url": "https://www.notion.so/product/ai",
+      "price": "要確認(公式サイトで最新の料金体系を確認)",
+      "features": [
+        "ドキュメント・データベース・タスク管理を一体化したワークスペース",
+        "AIによる文章要約・下書き作成・タスク項目の自動抽出"
+      ],
       "affiliate_link": "#affiliate-link-pending",
-      "pros": ["要確認"],
-      "cons": ["要確認"]
+      "pros": ["既存のNotionユーザーはシームレスに導入できる"],
+      "cons": ["単体のタスク管理特化ツールに比べ、初期設定の自由度が高く手間がかかる場合がある"]
     },
     {
-      "id": "sample-task-b",
-      "name": "[商品名 要確認]",
-      "price": "要確認",
-      "features": ["要確認: 自動スケジューリング", "要確認: カレンダー連携"],
+      "id": "todoist",
+      "name": "Todoist",
+      "official_url": "https://www.todoist.com/pricing",
+      "price": "要確認(公式サイトで最新の料金体系を確認)",
+      "features": [
+        "自然言語での素早いタスク入力(日時・繰り返し設定の自動認識)",
+        "AIによる優先度・締切の提案機能"
+      ],
       "affiliate_link": "#affiliate-link-pending",
-      "pros": ["要確認"],
-      "cons": ["要確認"]
+      "pros": ["シンプルで軽量、個人のToDo管理に向いている"],
+      "cons": ["チームでの高度なプロジェクト管理には機能が不足する場合がある"]
+    },
+    {
+      "id": "clickup",
+      "name": "ClickUp",
+      "official_url": "https://clickup.com/pricing",
+      "price": "要確認(無料プランの範囲・上位プラン料金は公式サイトで確認)",
+      "features": [
+        "タスク・ドキュメント・チャットなどを統合した多機能プラットフォーム",
+        "AIによる要約・下書き作成・タスク自動生成機能"
+      ],
+      "affiliate_link": "#affiliate-link-pending",
+      "pros": ["無料プランから利用を開始でき、機能が豊富"],
+      "cons": ["機能が多い分、使いこなすまでの学習コストがかかる"]
+    },
+    {
+      "id": "motion",
+      "name": "Motion",
+      "official_url": "https://www.usemotion.com/pricing",
+      "price": "要確認(公式サイトで最新の料金体系を確認)",
+      "features": [
+        "AIによるタスクの自動スケジューリング",
+        "カレンダーとタスク管理の統合"
+      ],
+      "affiliate_link": "#affiliate-link-pending",
+      "pros": ["スケジュールの最適化を自動で行ってくれる"],
+      "cons": ["他のタスク管理ツールと比べ価格帯が高めとされる(要確認)"]
     }
   ]
 }

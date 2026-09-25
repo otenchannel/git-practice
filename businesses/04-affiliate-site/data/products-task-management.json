@@ -1,0 +1,25 @@
+{
+  "category": "AIタスク管理ツール比較",
+  "updated": "2026-09-25",
+  "note": "価格・機能は要確認フラグ付きのプレースホルダーです。公開前に公式サイトで検証してください。",
+  "products": [
+    {
+      "id": "sample-task-a",
+      "name": "[商品名 要確認]",
+      "price": "要確認",
+      "features": ["要確認: AI自動優先度付け", "要確認: チーム共有機能"],
+      "affiliate_link": "#affiliate-link-pending",
+      "pros": ["要確認"],
+      "cons": ["要確認"]
+    },
+    {
+      "id": "sample-task-b",
+      "name": "[商品名 要確認]",
+      "price": "要確認",
+      "features": ["要確認: 自動スケジューリング", "要確認: カレンダー連携"],
+      "affiliate_link": "#affiliate-link-pending",
+      "pros": ["要確認"],
+      "cons": ["要確認"]
+    }
+  ]
+}

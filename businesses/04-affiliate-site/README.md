@@ -16,8 +16,10 @@
 
 ## ディレクトリ構成
 ```
-data/products.json   比較データ(価格・スペックは要確認フラグ付き)
-site/index.html      比較ページ(products.jsonを読み込んで表示)
+data/products.json                  AIライティングツール比較データ
+data/products-task-management.json  AIタスク管理ツール比較データ
+site/index.html                     AIライティングツール比較ページ
+site/task-management.html           AIタスク管理ツール比較ページ
 ```
 
 ## 注意
@@ -25,3 +27,4 @@ site/index.html      比較ページ(products.jsonを読み込んで表示)
 
 ## 運用ログ
 - 2026-09-25: 事業立ち上げ。「AIライティングツール比較」カテゴリの初期データとページを作成。
+- 2026-09-25: 「AIタスク管理ツール比較」カテゴリを追加し、サイト内ナビゲーションを整備。

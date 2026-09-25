@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AIライティングツール比較</title>
+<title>AIタスク管理ツール比較</title>
 <style>
   body { font-family: -apple-system, "Hiragino Sans", sans-serif; max-width: 800px; margin: 40px auto; padding: 0 16px; color: #222; }
   h1 { font-size: 1.6rem; }
@@ -18,7 +18,7 @@
 </head>
 <body>
   <nav><a href="./index.html">AIライティングツール比較</a> | <a href="./task-management.html">AIタスク管理ツール比較</a></nav>
-  <h1>AIライティングツール比較</h1>
+  <h1>AIタスク管理ツール比較</h1>
   <div class="notice">
     本ページはプロトタイプです。掲載中の価格・機能は未確認のプレースホルダーであり、アフィリエイトリンクも未設定です。本記事にはアフィリエイトリンクを含む予定です。
   </div>
@@ -28,7 +28,7 @@
   </footer>
 
   <script>
-    fetch('../data/products.json')
+    fetch('../data/products-task-management.json')
       .then(r => r.json())
       .then(data => {
         document.getElementById('updated').textContent = data.updated;

@@ -15,8 +15,8 @@ https://git-practice-nu-three.vercel.app (Vercel, 本番)
 ## セットアップチェックリスト(人間側)
 - [x] ホスティング先の決定・公開 → **Vercel** で公開完了(2026-09-28)。Vercelプロジェクト「git-practice」(otenchannel/git-practice)のRoot Directoryを`businesses/01-ai-blog/site`に設定し、本番デプロイ済み。※このVercelプロジェクトは事業01専用として使用(他事業が使う場合は別プロジェクトを作成すること)
 - [ ] 独自ドメイン取得(任意、最初はVercelの自動割当ドメインでも可)
-- [ ] Google Search Console 登録
-- [ ] Google Analytics(GA4)登録
+- [x] Google Search Console 登録 → URLプレフィックス `https://git-practice-nu-three.vercel.app` で登録・所有権確認済み(2026-09-28)。検索パフォーマンスデータは反映待ち(登録直後のため)
+- [x] Google Analytics(GA4)登録 → 測定ID `G-B5R6H9BGSW`(2026-09-28)。`build_site.py`のテンプレートに埋め込み済みで、リアルタイムレポートでの計測も確認済み
 - [ ] 記事が10本以上たまったら Google AdSense 申請
 
 ## Vercelへの接続手順(人間側の作業)
@@ -54,3 +54,4 @@ site/         生成された静的サイト(Vercelの配信対象)。posts/ 編
 - 2026-09-25: ホスティングをVercelに決定。`build_site.py`でMarkdown→静的HTML変換する仕組みと`site/`(配信用出力)を追加。Vercel側のプロジェクト作成(Root Directory指定含む)は人間の作業として手順を本READMEに記載、ユーザーの実施待ち。
 - 2026-09-25: ユーザーより公開プラン(Vercelでの静的サイト公開)を承認済み。リポジトリ側の準備は完了。エージェントはブラウザ操作・外部アカウント作成ができないため、Vercelアカウント作成〜プロジェクトImportは引き続きユーザー自身の作業として待機中(手順は上記「Vercelへの接続手順」参照)。
 - 2026-09-28: ユーザーがVercelにログインし、リポジトリ`otenchannel/git-practice`を連携(既存プロジェクト「git-practice」)。ユーザーと画面をスクリーンショットで確認しながら、Build and Deployment設定でRoot Directoryを`businesses/01-ai-blog/site`に変更・保存。既存デプロイをRedeployして動作確認(記事一覧・記事詳細ページとも正常表示)、その後「生産段階へ昇格」で本番昇格し、本番URL https://git-practice-nu-three.vercel.app での表示も確認済み。ブログが正式に公開状態になった(現時点で3記事)。
+- 2026-09-28: GA4プロパティを作成し測定ID `G-B5R6H9BGSW` を取得、`build_site.py`のページテンプレートにgtag.jsを埋め込みsite/を再生成・デプロイ・本番昇格。GA4リアルタイムレポートでアクセスが計測されることを確認。続けてGoogle Search ConsoleにURLプレフィックス `https://git-practice-nu-three.vercel.app` で登録し、所有権確認まで完了(検索パフォーマンスデータは反映待ち)。これで基盤構築(ホスティング・GA4・Search Console)は一通り完了。

@@ -47,3 +47,4 @@ SETUP_GUIDE.md 配信基盤(beehiiv/Substack)セットアップの人間向け�
 - 2026-09-25: Substack上でパブリケーション名が「AI Ops Weekly」に変更されたことをスクリーンショットで確認。「Getting started」チェックリストの「Set up the basics」は未完了のため、説明文・ロゴ・配信用メールアドレスの設定を引き続き案内中。
 - 2026-09-28: Stripe連携画面(Turn on paid subscriptions)に進んでいたのを検知し、時期尚早のため中断を案内。その後パブリケーション設定(soramathis.substack.com/publish/settings)のEmailsタブで送信者名「まちなか from AI Ops Weekly」を確認。ユーザーにシンプルな「AI Ops Weekly」単独表記への変更希望有無を確認中。基盤構築(フェーズ1)のチェックリスト必須項目は実質完了。
 - 2026-09-28: フェーズ2「公開プラン」を提示しユーザーが承認。`issue-004.md`を実配信用の「第1号」として仕上げ、読者質問コーナー・編集後記の空欄を記入(初回配信のため質問コーナーは「次号以降掲載予定」の案内に、編集後記はニュースレターの姿勢を説明する内容にした)。配信予定日は未確定(ユーザー決定待ち)。次のアクションはSubstackエディタへの転記とテスト配信。
+- 2026-09-28: ユーザーがSubstackの記事エディタ(soramathis.substack.com/publish/post/217800208)に第1号の本文を全文貼り付け完了。出典リンクは当初URLをそのまま表示テキストにしてしまったため、読みやすい文字列(Cisco Talos公式ブログ/Yahoo News/GeekWire等)に差し替える方法を案内。次はPreviewでの確認とテスト配信(自分宛て)。

@@ -13,6 +13,7 @@ POSTS_DIR = BASE_DIR / "posts"
 SITE_DIR = BASE_DIR / "site"
 SITE_NAME = "AIツール活用ラボ"
 SITE_DESCRIPTION = "フリーランス・個人開発者・中小企業向けに、AIツールの比較・レビュー・活用法を発信するブログ。"
+GA_MEASUREMENT_ID = "G-B5R6H9BGSW"
 
 def inline(text: str) -> str:
     text = html.escape(text)
@@ -115,6 +116,13 @@ def page_template(title: str, description: str, body_html: str, is_index: bool) 
 <title>{html.escape(title)}{'' if is_index else f' | {SITE_NAME}'}</title>
 <meta name="description" content="{html.escape(description)}">
 <link rel="stylesheet" href="/style.css">
+<script async src="https://www.googletagmanager.com/gtag/js?id={GA_MEASUREMENT_ID}"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){{dataLayer.push(arguments);}}
+  gtag('js', new Date());
+  gtag('config', '{GA_MEASUREMENT_ID}');
+</script>
 </head>
 <body>
 <header class="site-header">

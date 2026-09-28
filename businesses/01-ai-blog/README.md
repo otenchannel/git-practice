@@ -55,3 +55,4 @@ site/         生成された静的サイト(Vercelの配信対象)。posts/ 編
 - 2026-09-25: ユーザーより公開プラン(Vercelでの静的サイト公開)を承認済み。リポジトリ側の準備は完了。エージェントはブラウザ操作・外部アカウント作成ができないため、Vercelアカウント作成〜プロジェクトImportは引き続きユーザー自身の作業として待機中(手順は上記「Vercelへの接続手順」参照)。
 - 2026-09-28: ユーザーがVercelにログインし、リポジトリ`otenchannel/git-practice`を連携(既存プロジェクト「git-practice」)。ユーザーと画面をスクリーンショットで確認しながら、Build and Deployment設定でRoot Directoryを`businesses/01-ai-blog/site`に変更・保存。既存デプロイをRedeployして動作確認(記事一覧・記事詳細ページとも正常表示)、その後「生産段階へ昇格」で本番昇格し、本番URL https://git-practice-nu-three.vercel.app での表示も確認済み。ブログが正式に公開状態になった(現時点で3記事)。
 - 2026-09-28: GA4プロパティを作成し測定ID `G-B5R6H9BGSW` を取得、`build_site.py`のページテンプレートにgtag.jsを埋め込みsite/を再生成・デプロイ・本番昇格。GA4リアルタイムレポートでアクセスが計測されることを確認。続けてGoogle Search ConsoleにURLプレフィックス `https://git-practice-nu-three.vercel.app` で登録し、所有権確認まで完了(検索パフォーマンスデータは反映待ち)。これで基盤構築(ホスティング・GA4・Search Console)は一通り完了。
+- 2026-09-28: 4本目「個人開発者のためのAIコーディングアシスタント選定ガイド」・5本目「AIチャットボットを自社サイトに導入する前に確認すべきポイント」を作成し`site/`を再生成(計5記事)。push後、Vercelでの再デプロイ・本番昇格をユーザーと実施予定。

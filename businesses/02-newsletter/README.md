@@ -18,7 +18,7 @@ AI・生産性ツール関連の実務者向けに、週刊(想定)で配信す�
 
 ## セットアップチェックリスト(人間側)
 - [x] 配信基盤の選定(beehiiv / Substack)アカウント開設 — Substack(`soramathis.substack.com`)で開設済み(2026-09-25)
-- [ ] 配信用メールアドレス・ブランド設定
+- [x] 配信用メールアドレス・ブランド設定 — パブリケーション名「AI Ops Weekly」・説明文・Email sender nameを設定済み(2026-09-28)。ロゴは任意項目のため未設定
 - [ ] 号を数本ドラフトしたら実際に配信開始
 - [ ] 購読者が増えたらStripeで有料プラン検討
 
@@ -39,3 +39,4 @@ SETUP_GUIDE.md 配信基盤(beehiiv/Substack)セットアップの人間向け�
 - 2026-09-25: ユーザーがSubstackでアカウント・パブリケーションを開設(`soramathis.substack.com`)。スクリーンショットで確認しダッシュボード(Home)画面まで到達。次はニュースレター名・説明文・配信用メールアドレスの設定を案内。
 - 2026-09-25: パブリケーション名を「AI Ops Weekly」に決定。第1〜4号ドラフトのタイトルとREADMEに反映。Substack側の「Set up the basics」画面での実際の名称登録はユーザー操作待ち(URL `soramathis.substack.com` は変更しない前提)。
 - 2026-09-25: Substack上でパブリケーション名が「AI Ops Weekly」に変更されたことをスクリーンショットで確認。「Getting started」チェックリストの「Set up the basics」は未完了のため、説明文・ロゴ・配信用メールアドレスの設定を引き続き案内中。
+- 2026-09-28: Stripe連携画面(Turn on paid subscriptions)に進んでいたのを検知し、時期尚早のため中断を案内。その後パブリケーション設定(soramathis.substack.com/publish/settings)のEmailsタブで送信者名「まちなか from AI Ops Weekly」を確認。ユーザーにシンプルな「AI Ops Weekly」単独表記への変更希望有無を確認中。基盤構築(フェーズ1)のチェックリスト必須項目は実質完了。

@@ -10,7 +10,7 @@
 - アクセス・支援実績を見ながら、将来的に機能追加型の有料プランへ発展させることを検討する
 
 ## セットアップチェックリスト(人間側)
-- [ ] Vercel / Netlify / GitHub Pages でのホスティング設定
+- [ ] Vercel / Netlify / GitHub Pages でのホスティング設定(Vercelプロジェクト`03-saas-tool`作成済み、Root Directory設定済み。mainブランチにまだ`businesses/`がなく本番デプロイが404のため、作業ブランチのプレビューデプロイで代替中)
 - [ ] 独自ドメイン(任意)
 - [x] Stripeアカウント開設(サンドボックス、publishable key取得済み)
 - [ ] Stripe本番環境の有効化(本人確認・銀行口座登録)

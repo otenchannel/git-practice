@@ -4,8 +4,11 @@
 
 > 編集メモ: 内容の新しさを優先し、内部ドラフトの中で最も直近のニュースを扱うこの号を、実際の配信では「第1号」として送ります(第1〜3号は開発初期のテンプレート検証用で、内容が古くなったため実配信はしません)。
 >
-> **Buttondown配信メモ(2026-09-28追記):** この本文はMarkdownのままButtondownの `/emails` API(`body`フィールド)に渡せる想定。`subject`には「AI Ops Weekly 第1号」を使用。以下の見出し(`#`)行と「配信予定日」行、この編集メモ自体、および末尾の「編集メモ(公開前チェックリスト)」セクションは内部管理用のため配信本文には含めない。
+> **Buttondown配信メモ(2026-09-28追記):** この本文はMarkdownのままButtondownの `/emails` API(`body`フィールド)に渡せる想定。以下の`BUTTONDOWN:SUBJECT`〜`BUTTONDOWN:BODY:START`/`END`のマーカーで、`scripts/create_draft.py`が件名・本文を機械的に抽出する。
 
+<!-- BUTTONDOWN:SUBJECT: AI Ops Weekly 第1号 -->
+
+<!-- BUTTONDOWN:BODY:START -->
 ---
 
 ## 今週のハイライト
@@ -33,6 +36,7 @@ Cisco Talosは2026年9月22日、DeepSeek・Qwen・Mistral・Google Geminiの4�
 ---
 
 *このニュースレターはAI・生産性ツールに関心のある実務者向けにお届けしています。ご意見・ご要望はぜひお寄せください。*
+<!-- BUTTONDOWN:BODY:END -->
 
 ---
 ### 編集メモ(公開前チェックリスト)

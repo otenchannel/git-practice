@@ -51,9 +51,24 @@ Substack上ではすでに同内容の記事を作成済みだが、配信基盤
 
 ## ディレクトリ構成
 ```
-issues/        各号のMarkdownドラフト
-SETUP_GUIDE.md 配信基盤(Buttondown)セットアップの人間向け手順ガイド
+issues/                 各号のMarkdownドラフト
+scripts/create_draft.py issueファイルからButtondownに下書き(status=draft)を作成するスクリプト
+scripts/send_draft.py   下書きを実際に配信するスクリプト(要・人間の明示的な確認。第2引数に"SEND"必須)
+SETUP_GUIDE.md          配信基盤(Buttondown)セットアップの人間向け手順ガイド
 ```
+
+## Buttondown連携スクリプトの使い方
+`BUTTONDOWN_API_KEY`が環境変数として使える状態(次回セッション以降)になったら:
+
+```bash
+# 下書き作成(安全: statusは常にdraft、配信は一切行わない)
+python3 businesses/02-newsletter/scripts/create_draft.py businesses/02-newsletter/issues/issue-004.md
+
+# 実際の配信(要注意: 取り消せない。ユーザーの明示的な許可を得てから実行すること)
+python3 businesses/02-newsletter/scripts/send_draft.py <email_id> SEND
+```
+
+issueファイル側は `<!-- BUTTONDOWN:SUBJECT: ... -->` と `<!-- BUTTONDOWN:BODY:START -->` 〜 `<!-- BUTTONDOWN:BODY:END -->` のマーカーで件名・本文の範囲を示す。新しい号を作る際は、このマーカーを含めること(`issue-004.md`を参考にする)。
 
 ## 運用ログ
 - 2026-09-25: 事業立ち上げ。第1号のドラフトテンプレートを作成。
@@ -73,3 +88,4 @@ SETUP_GUIDE.md 配信基盤(Buttondown)セットアップの人間向け手順�
 - 2026-09-28: 親セッションより正式な方針転換の指示を受領(ReadNotifications経由)。Substackには配信APIがなく手動配信が必要で「半自動ビジネス」として弱いという課題を受け、公式配信APIを持つButtondownへ移行。今後はAPIキー登録後、下書き作成〜配信までエージェントが自律的に行える体制を目指す。noteの併用は将来フェーズとして一言触れるのみに留める。README全体をButtondown前提に更新。Substackでの実配信は行わない方針に変更。
 - 2026-09-29: ユーザーがButtondownアカウントを開設(表示名「AI Ops Weekly」)。一般設定(概要文・タイムゾーン・言語を日本語に変更)を完了。APIキーを発行(ラベル「Claude Code連携」、APIバージョン2026-04-01)。権限は最小権限の考え方で設定: 購読者=読む、メール=読み書き、送信中=有効(ユーザーが将来の完全自動配信を明示的に許可)、自動化/フォーム/調査=読み書きのまま(未使用機能につき実害小と判断)、設定=なし(請求情報アクセスを含むため除外)、スタイリング=読む。
 - 2026-09-29: 発行したAPIキーをユーザーが環境のSecrets設定に`BUTTONDOWN_API_KEY`として登録。ただし新しい環境変数は実行中のセッションには反映されず、次回セッション起動時から利用可能になる仕様のため、今回のセッションでは未反映(`echo $BUTTONDOWN_API_KEY`で未設定を確認)。ユーザーの意向により今回のセッションはこのまま継続し、Buttondown API連携(下書きのAPI経由登録)は次回セッション以降に持ち越し。**運用方針**: 送信中権限は有効化されているが、初回配信を含む最初の数号は「下書き完成→ユーザーに一言確認→送信」の軽い確認ステップを挟み、問題なく数号続いた段階で完全自動配信(確認なし)に移行する(ユーザー合意済み)。
+- 2026-09-29: 次回セッションですぐ動けるよう、Buttondown API連携スクリプト(`scripts/create_draft.py`, `scripts/send_draft.py`)を作成。`create_draft.py`はissueファイルからマーカー(`BUTTONDOWN:SUBJECT`/`BUTTONDOWN:BODY:START`/`END`)で件名・本文を抽出し、status=draftで下書きを作成するのみ(配信は一切行わない)。`send_draft.py`は第2引数に大文字の"SEND"を渡さない限り何もしない安全ガード付きで、実際の配信(about_to_send)を行う。`issue-004.md`にマーカーを追加し、抽出ロジックの動作確認(件名「AI Ops Weekly 第1号」、本文1987文字を正しく抽出)とスクリプトの安全ガード(APIキー未設定時・SEND未指定時に何もしないこと)を確認済み。API呼び出し自体はAPIキーが使えるようになってから実施する。

@@ -1,0 +1,6 @@
+output/
+*.mp3
+*.mp4
+client_secret*.json
+token.json
+.env

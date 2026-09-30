@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Base64 / URLエンコード変換ツール</title>
+<style>
+  body { font-family: -apple-system, "Hiragino Sans", sans-serif; max-width: 960px; margin: 32px auto; padding: 0 16px; color: #222; }
+  h1 { font-size: 1.5rem; }
+  .desc { color: #555; font-size: 0.9rem; margin-bottom: 20px; }
+  .mode-tabs { display: flex; gap: 8px; margin-bottom: 16px; }
+  .mode-tabs button { padding: 8px 16px; font-size: 0.9rem; cursor: pointer; border: 1px solid #cbd5e0; border-radius: 6px; background: white; color: #444; }
+  .mode-tabs button.active { background: #2b6cb0; color: white; border-color: #2b6cb0; }
+  label.field-label { display: block; font-size: 0.85rem; color: #555; margin-bottom: 4px; }
+  textarea { width: 100%; height: 200px; font-family: monospace; font-size: 0.9rem; padding: 8px; box-sizing: border-box; }
+  .controls { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+  button.action { padding: 10px 20px; font-size: 0.95rem; cursor: pointer; border: none; border-radius: 6px; background: #2b6cb0; color: white; }
+  button.secondary { background: #718096; }
+  button.action:hover { opacity: 0.9; }
+  #error { color: #c53030; margin-top: 8px; font-size: 0.9rem; min-height: 1.2em; }
+  .privacy { margin-top: 16px; font-size: 0.8rem; color: #888; }
+  .support { display: inline-block; margin-top: 12px; padding: 8px 16px; border: 1px solid #ddd; border-radius: 6px; color: #555; text-decoration: none; font-size: 0.85rem; }
+  .support:hover { background: #f7f7f7; }
+</style>
+</head>
+<body>
+  <h1>Base64 / URLエンコード変換ツール</h1>
+  <p class="desc">テキストをBase64またはURLエンコード形式に変換・復元します。すべてブラウザ内で処理され、外部にデータは送信されません。</p>
+
+  <div class="mode-tabs" role="tablist">
+    <button id="tabBase64" class="active" onclick="setMode('base64')" role="tab" aria-selected="true">Base64</button>
+    <button id="tabUrl" onclick="setMode('url')" role="tab" aria-selected="false">URLエンコード</button>
+  </div>
+
+  <label class="field-label" for="input">入力</label>
+  <textarea id="input" placeholder="変換したいテキストを入力してください"></textarea>
+
+  <div class="controls">
+    <button class="action" onclick="doEncode()">エンコード</button>
+    <button class="action" onclick="doDecode()">デコード</button>
+    <button class="action secondary" onclick="swap()">入出力を入れ替える</button>
+  </div>
+
+  <label class="field-label" for="output" style="margin-top:12px;">結果</label>
+  <textarea id="output" readonly placeholder="ここに結果が表示されます"></textarea>
+
+  <div class="controls">
+    <button class="action secondary" onclick="copyResult()">結果をコピー</button>
+  </div>
+
+  <div id="error" role="alert"></div>
+
+  <script>
+    let currentMode = 'base64';
+
+    function setMode(mode) {
+      currentMode = mode;
+      document.getElementById('tabBase64').classList.toggle('active', mode === 'base64');
+      document.getElementById('tabBase64').setAttribute('aria-selected', mode === 'base64');
+      document.getElementById('tabUrl').classList.toggle('active', mode === 'url');
+      document.getElementById('tabUrl').setAttribute('aria-selected', mode === 'url');
+      document.getElementById('error').textContent = '';
+    }
+
+    function utf8ToBase64(str) {
+      const bytes = new TextEncoder().encode(str);
+      let binary = '';
+      bytes.forEach(b => { binary += String.fromCharCode(b); });
+      return btoa(binary);
+    }
+
+    function base64ToUtf8(b64) {
+      const cleaned = b64.replace(/\s+/g, '');
+      const binary = atob(cleaned);
+      const bytes = Uint8Array.from(binary, c => c.charCodeAt(0));
+      return new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+    }
+
+    function doEncode() {
+      const input = document.getElementById('input').value;
+      const errorDiv = document.getElementById('error');
+      errorDiv.textContent = '';
+      try {
+        const result = currentMode === 'base64' ? utf8ToBase64(input) : encodeURIComponent(input);
+        document.getElementById('output').value = result;
+      } catch (e) {
+        document.getElementById('output').value = '';
+        errorDiv.textContent = 'エンコードに失敗しました: ' + e.message;
+      }
+    }
+
+    function doDecode() {
+      const input = document.getElementById('input').value;
+      const errorDiv = document.getElementById('error');
+      errorDiv.textContent = '';
+      try {
+        const result = currentMode === 'base64' ? base64ToUtf8(input) : decodeURIComponent(input);
+        document.getElementById('output').value = result;
+      } catch (e) {
+        document.getElementById('output').value = '';
+        const label = currentMode === 'base64' ? '有効なBase64文字列ではありません' : '有効なURLエンコード文字列ではありません';
+        errorDiv.textContent = 'デコードに失敗しました: ' + label + ' (' + e.message + ')';
+      }
+    }
+
+    function swap() {
+      const input = document.getElementById('input');
+      const output = document.getElementById('output');
+      const tmp = input.value;
+      input.value = output.value;
+      output.value = tmp;
+      document.getElementById('error').textContent = '';
+    }
+
+    function copyResult() {
+      const output = document.getElementById('output');
+      if (!output.value) return;
+      output.select();
+      navigator.clipboard.writeText(output.value).catch(() => {
+        document.execCommand('copy');
+      });
+    }
+  </script>
+
+  <p class="privacy">※ プライバシー保護のため、入力データはサーバーに送信・保存されません(ブラウザ内で完結)。</p>
+
+  <a class="support" href="https://buy.stripe.com/test_6oUeVccm12Kz0RAb185Vu00" target="_blank" rel="noopener">☕ このツールの開発を支援する</a>
+</body>
+</html>

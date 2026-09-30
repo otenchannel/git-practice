@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ミニツール集</title>
+<meta name="description" content="ブラウザだけで完結する無料のミニWebツール集。データはすべてブラウザ内で処理され、外部に送信されません。">
+<style>
+  body { font-family: -apple-system, "Hiragino Sans", sans-serif; max-width: 720px; margin: 48px auto; padding: 0 16px; color: #222; }
+  h1 { font-size: 1.6rem; margin-bottom: 4px; }
+  .desc { color: #555; font-size: 0.95rem; margin-bottom: 32px; }
+  .tools { display: flex; flex-direction: column; gap: 12px; }
+  .tool-card { display: block; padding: 16px 20px; border: 1px solid #e2e8f0; border-radius: 10px; text-decoration: none; color: inherit; transition: border-color 0.15s, background 0.15s; }
+  .tool-card:hover { border-color: #2b6cb0; background: #f7faff; }
+  .tool-card h2 { font-size: 1.05rem; margin: 0 0 4px; color: #2b6cb0; }
+  .tool-card p { margin: 0; font-size: 0.85rem; color: #666; }
+  .privacy { margin-top: 32px; font-size: 0.8rem; color: #888; }
+</style>
+</head>
+<body>
+  <h1>ミニツール集</h1>
+  <p class="desc">ブラウザだけで完結する無料の単機能Webツールです。会員登録不要、データはすべてブラウザ内で処理され外部に送信されません。</p>
+
+  <div class="tools">
+    <a class="tool-card" href="tools/text-diff/">
+      <h2>テキスト差分比較ツール</h2>
+      <p>2つのテキストを比較し、差分をハイライト表示します。</p>
+    </a>
+    <a class="tool-card" href="tools/json-formatter/">
+      <h2>JSON整形ツール</h2>
+      <p>JSONテキストを整形(インデント付与)または圧縮します。</p>
+    </a>
+    <a class="tool-card" href="tools/password-generator/">
+      <h2>パスワード生成ツール</h2>
+      <p>安全な乱数で強力なランダムパスワードを生成します。</p>
+    </a>
+    <a class="tool-card" href="tools/base64-url-encoder/">
+      <h2>Base64 / URLエンコード変換ツール</h2>
+      <p>テキストをBase64またはURLエンコード形式に変換・復元します。</p>
+    </a>
+  </div>
+
+  <p class="privacy">※ プライバシー保護のため、入力データはサーバーに送信・保存されません(すべてブラウザ内で完結)。</p>
+</body>
+</html>

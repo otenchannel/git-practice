@@ -1,0 +1,45 @@
+# AI Ops Weekly 第1号(配信用・内部ドラフトファイル名はissue-004.md)
+
+配信予定日: [要設定 — ユーザー確認後に決定]
+
+> 編集メモ: 内容の新しさを優先し、内部ドラフトの中で最も直近のニュースを扱うこの号を、実際の配信では「第1号」として送ります(第1〜3号は開発初期のテンプレート検証用で、内容が古くなったため実配信はしません)。
+>
+> **Buttondown配信メモ(2026-09-28追記):** この本文はMarkdownのままButtondownの `/emails` API(`body`フィールド)に渡せる想定。以下の`BUTTONDOWN:SUBJECT`〜`BUTTONDOWN:BODY:START`/`END`のマーカーで、`scripts/create_draft.py`が件名・本文を機械的に抽出する。
+
+<!-- BUTTONDOWN:SUBJECT: AI Ops Weekly 第1号 -->
+
+<!-- BUTTONDOWN:BODY:START -->
+---
+
+## 今週のハイライト
+- Cisco Talosが、複数の商用AIモデルに次の行動を「投票」させて動くWindowsマルウェア「CLOSEDQUORUM」を公開(9/22)。人手を介さず自律的に指令判断を行う初の事例として報告。出典: [Cisco Talos公式ブログ](https://blog.talosintelligence.com/the-closed-quorum-inside-the-first-reported-autonomous-ai-c2-implant/)
+- Google・OpenAI・Anthropicが、フロンティアAIの安全基準を策定する業界横断の任意団体「Frontier AI Standards Agency」の設立に向けて動いていることが判明。出典: [Yahoo News](https://www.yahoo.com/news/politics/articles/google-openai-anthropic-move-closer-154300474.html)
+- Amazonが「Amazon Accelerate」にて、Seller Central(出品者向け管理画面)のAPIを外部のAIエージェントに開放。米国でClaude連携のベータ版プラグインを開始(9/23)。出典: [GeekWire](https://www.geekwire.com/2026/amazon-opens-its-seller-tools-to-outside-ai-agents-starting-with-anthropics-claude/)
+
+## ピックアップ解説
+### 自律型マルウェア「CLOSEDQUORUM」— AIが攻撃の意思決定を担う
+Cisco Talosは2026年9月22日、DeepSeek・Qwen・Mistral・Google Geminiの4つの商用AIモデルに侵害後の次の行動を投票させ、多数決(同数の場合はDeepSeekが決定)で実行するWindows向けマルウェア「CLOSEDQUORUM」を公開した。攻撃者による継続的な指令なしに、AIモデルの合議のみで次の行動を決定する点が特徴で、Talosは「公表された中で初めての自律的AI-C2実装」と説明している。狙われる情報はWindows認証情報・ブラウザ保存パスワード・暗号資産ウォレットのデータなど。TalosはこのようなAI主導型マルウェアを検知するためのオープンソースツール「CAIRN」も同時公開した。なお、実際の被害事例は現時点で確認されていない。出典: [Cisco Talos公式ブログ](https://blog.talosintelligence.com/the-closed-quorum-inside-the-first-reported-autonomous-ai-c2-implant/)、[TechTimes](https://www.techtimes.com/articles/327893/20260923/cisco-talos-discloses-autonomous-windows-malware-four-ai-models-direct-each-attack.htm)
+
+**実務への示唆:**
+「AIが攻撃の意思決定まで担う」マルウェアが実証されたことは、AIツールの業務利用が進む組織ほどセキュリティ対策の見直しが急務であることを示しています。エンドポイント保護・認証情報管理などの基本的な対策を改めて確認しておくと安心です。
+
+## 実務Tips
+今週のちょっとしたAI活用Tips:
+外部のAIエージェントやプラグインにシステムへのアクセス権を渡す際は、「何ができて、何ができないか」の権限範囲を事前に確認する習慣をつけましょう。特に決済・在庫・顧客データに関わる連携は、まず読み取り専用や限定的な権限から試すと安全です。
+
+## 読者からの質問コーナー
+記念すべき第1号のため、今回はまだ読者の皆さんからの質問はありません。次号以降、いただいたご質問をここでご紹介していく予定です。ご質問・ご感想はぜひお気軽にお寄せください。
+
+## 編集後記
+「AI Ops Weekly」第1号をお届けしました。AI関連のニュースは毎週のように大きな発表が続き、追いかけるだけでも一苦労な状況です。このニュースレターでは話題を絞り込み、「結局、実務にどう関係するのか」を一緒に考える場にしていきたいと思います。今後ともよろしくお願いします。
+
+---
+
+*このニュースレターはAI・生産性ツールに関心のある実務者向けにお届けしています。ご意見・ご要望はぜひお寄せください。*
+<!-- BUTTONDOWN:BODY:END -->
+
+---
+### 編集メモ(公開前チェックリスト)
+- [ ] 「要確認」箇所をすべて一次情報で埋めたか
+- [ ] リンク切れがないか
+- [ ] 誤字脱字チェック

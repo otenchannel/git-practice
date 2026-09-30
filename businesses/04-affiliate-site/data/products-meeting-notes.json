@@ -1,0 +1,62 @@
+{
+  "category": "AI議事録・文字起こしツール比較",
+  "updated": "2026-09-25",
+  "note": "商品名・一般的な機能は公開情報をもとに記載していますが、価格・詳細プランは変動するため「要確認」の項目は公式サイトで必ず確認してください。アフィリエイトリンクはプログラム未承認のためプレースホルダーです。",
+  "products": [
+    {
+      "id": "otter-ai",
+      "name": "Otter.ai",
+      "official_url": "https://otter.ai/pricing",
+      "price": "要確認(公式サイトで最新の料金体系を確認)",
+      "features": [
+        "会議の音声をリアルタイムで文字起こし",
+        "AIによる会議の要約・アクションアイテム抽出",
+        "Zoom・Google Meet等の主要会議ツールとの連携"
+      ],
+      "affiliate_link": "#affiliate-link-pending",
+      "pros": ["英語圏での利用実績が豊富とされる"],
+      "cons": ["無料プランは月間の文字起こし時間に制限があるとされる(要確認)"]
+    },
+    {
+      "id": "fireflies-ai",
+      "name": "Fireflies.ai",
+      "official_url": "https://fireflies.ai/pricing",
+      "price": "要確認(公式サイトで最新の料金体系を確認)",
+      "features": [
+        "会議の自動録音・文字起こし",
+        "AIによる要約・トピック検索機能",
+        "複数の会議ツール・言語への対応"
+      ],
+      "affiliate_link": "#affiliate-link-pending",
+      "pros": ["無料プランでも文字起こし自体は利用しやすいとされる(要確認)"],
+      "cons": ["高度な検索・分析機能は上位プランが必要な場合がある"]
+    },
+    {
+      "id": "tldv",
+      "name": "tl;dv",
+      "official_url": "https://tldv.io/pricing",
+      "price": "要確認(公式サイトで最新の料金体系を確認)",
+      "features": [
+        "会議の録画・文字起こし",
+        "AIによるハイライト抽出・要約",
+        "Zoom・Google Meet・Teamsへの対応"
+      ],
+      "affiliate_link": "#affiliate-link-pending",
+      "pros": ["無料プランでも録画・文字起こしを利用できるとされる(要確認)"],
+      "cons": ["高度なAI機能は月あたりの利用回数に制限がある場合がある"]
+    },
+    {
+      "id": "fathom",
+      "name": "Fathom",
+      "official_url": "https://fathom.video/pricing",
+      "price": "要確認(公式サイトで最新の料金体系を確認)",
+      "features": [
+        "会議の自動メモ作成・ハイライト機能",
+        "動画・文字起こしの保存機能"
+      ],
+      "affiliate_link": "#affiliate-link-pending",
+      "pros": ["無料プランでも動画・文字起こしの保存に強みがあるとされる(要確認)"],
+      "cons": ["日本語会議への対応度は要確認"]
+    }
+  ]
+}

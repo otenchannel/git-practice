@@ -43,5 +43,48 @@ class StoreTest(unittest.TestCase):
             app.create_order(self.db, "nope", "a@example.com")
 
 
+SECRET = b"whsec_test"
+
+
+def stripe_event(order_id, amount=1980, status="paid", etype="checkout.session.completed"):
+    return json.dumps({"type": etype, "data": {"object": {
+        "client_reference_id": order_id, "amount_total": amount, "payment_status": status}}}).encode()
+
+
+def stripe_header(body, ts=None, secret=SECRET):
+    import hashlib, hmac
+    ts = str(int(ts or time.time()))
+    return f"t={ts},v1=" + hmac.new(secret, ts.encode() + b"." + body, hashlib.sha256).hexdigest()
+
+
+class StripeTest(unittest.TestCase):
+    def setUp(self):
+        self.db = app.connect(tempfile.mktemp())
+        self.outbox = []
+        app.STRIPE_WEBHOOK_SECRET = SECRET
+        self.oid = app.create_order(self.db, "starter-guide", "a@example.com")
+
+    def run_hook(self, body, header=None):
+        return app.handle_stripe_webhook(self.db, body, stripe_header(body) if header is None else header, "http://x", self.outbox)
+
+    def test_paid_session_fulfills_once(self):
+        body = stripe_event(self.oid)
+        self.assertTrue(self.run_hook(body))
+        self.assertTrue(self.run_hook(body))
+        self.assertEqual(len(self.outbox), 1)
+
+    def test_bad_or_old_signature(self):
+        body = stripe_event(self.oid)
+        self.assertFalse(self.run_hook(body, stripe_header(body, secret=b"wrong")))
+        self.assertFalse(self.run_hook(body, stripe_header(body, ts=time.time() - 3600)))
+        self.assertFalse(self.run_hook(body, ""))
+        self.assertEqual(self.outbox, [])
+
+    def test_unpaid_and_amount_mismatch_not_fulfilled(self):
+        self.assertTrue(self.run_hook(stripe_event(self.oid, status="unpaid")))
+        self.assertFalse(self.run_hook(stripe_event(self.oid, amount=1)))
+        self.assertEqual(self.outbox, [])
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -31,7 +31,7 @@
 4. 集客の型(週1記事+SNS予約投稿)を固定して運用コストを下げる
 
 ## 5. 本番化チェックリスト
-- [ ] 決済を Stripe に接続(`PaymentProvider` 部分とWebhook署名検証をStripe方式に)
+- [x] 決済を Stripe に接続(Checkout + Webhook署名検証。テストモードで要動作確認)
 - [ ] メール送信を実装(現状は `outbox` に積むだけ)
 - [ ] `WEBHOOK_SECRET` / `DOWNLOAD_SECRET` を環境変数で本番値に
 - [ ] HTTPS化、永続ストレージ、バックアップ

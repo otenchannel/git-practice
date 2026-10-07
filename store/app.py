@@ -10,12 +10,18 @@ import os
 import secrets
 import sqlite3
 import time
+import urllib.parse
+import urllib.request
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
 
 BASE = Path(__file__).parent
 WEBHOOK_SECRET = os.environ.get("WEBHOOK_SECRET", "dev-webhook-secret").encode()
 DOWNLOAD_SECRET = os.environ.get("DOWNLOAD_SECRET", "dev-download-secret").encode()
+STRIPE_SECRET_KEY = os.environ.get("STRIPE_SECRET_KEY", "")
+STRIPE_WEBHOOK_SECRET = os.environ.get("STRIPE_WEBHOOK_SECRET", "").encode()
+PUBLIC_URL = os.environ.get("PUBLIC_URL", "http://localhost:8000")
+STRIPE_TOLERANCE_SEC = 300
 LINK_TTL_SEC = int(os.environ.get("LINK_TTL_SEC", 24 * 3600))
 MAX_DOWNLOADS = int(os.environ.get("MAX_DOWNLOADS", 3))
 
@@ -73,16 +79,74 @@ def handle_payment_webhook(db, raw_body: bytes, signature: str, base_url, outbox
     event = json.loads(raw_body)
     if event.get("type") != "payment.succeeded":
         return True
-    row = db.execute("SELECT * FROM orders WHERE id=?", (event["order_id"],)).fetchone()
-    if row is None or row["status"] == "paid":
-        return row is not None
+    return fulfill_order(db, event["order_id"], base_url, outbox)
+
+
+def fulfill_order(db, order_id, base_url, outbox, amount_jpy=None):
+    """入金確認済みの注文を確定し、DL URLを送る。冪等。注文が無い/金額不一致は False。"""
+    row = db.execute("SELECT * FROM orders WHERE id=?", (order_id,)).fetchone()
+    if row is None:
+        return False
+    product = load_products()[row["product_id"]]
+    if amount_jpy is not None and amount_jpy != product["price_jpy"]:
+        return False
+    if row["status"] == "paid":
+        return True
     db.execute("UPDATE orders SET status='paid' WHERE id=?", (row["id"],))
     db.commit()
-    product = load_products()[row["product_id"]]
     link = f"{base_url}/download/{make_token(row['id'])}"
     outbox.append({"to": row["email"], "subject": f"ご購入ありがとうございます: {product['name']}",
                    "body": f"ダウンロードURL(24時間有効・{MAX_DOWNLOADS}回まで): {link}"})
     return True
+
+
+def verify_stripe_signature(raw_body: bytes, header: str, secret=None, now=None):
+    """Stripe-Signature (t=...,v1=...) を検証。署名= HMAC-SHA256(secret, f"{t}.{body}")。"""
+    secret = secret or STRIPE_WEBHOOK_SECRET
+    if not secret or not header:
+        return False
+    parts = [kv.split("=", 1) for kv in header.split(",") if "=" in kv]
+    ts = next((v for k, v in parts if k == "t"), None)
+    sigs = [v for k, v in parts if k == "v1"]
+    if not ts or not ts.isdigit() or abs((now or time.time()) - int(ts)) > STRIPE_TOLERANCE_SEC:
+        return False
+    expected = hmac.new(secret, ts.encode() + b"." + raw_body, hashlib.sha256).hexdigest()
+    return any(hmac.compare_digest(expected, v) for v in sigs)
+
+
+def handle_stripe_webhook(db, raw_body: bytes, header: str, base_url, outbox):
+    if not verify_stripe_signature(raw_body, header):
+        return False
+    event = json.loads(raw_body)
+    if event.get("type") not in ("checkout.session.completed",
+                                 "checkout.session.async_payment_succeeded"):
+        return True
+    obj = event["data"]["object"]
+    if obj.get("payment_status") != "paid":  # コンビニ払い等は入金後の async イベントで処理
+        return True
+    return fulfill_order(db, obj.get("client_reference_id"), base_url, outbox,
+                         amount_jpy=obj.get("amount_total"))
+
+
+def create_checkout_session(order_id, product, email):
+    """Stripe Checkout Session を作成し、決済ページURLを返す。"""
+    form = {
+        "mode": "payment",
+        "client_reference_id": order_id,
+        "customer_email": email,
+        "success_url": f"{PUBLIC_URL}/thanks",
+        "cancel_url": f"{PUBLIC_URL}/products",
+        "line_items[0][quantity]": "1",
+        "line_items[0][price_data][currency]": "jpy",
+        "line_items[0][price_data][unit_amount]": str(product["price_jpy"]),
+        "line_items[0][price_data][product_data][name]": product["name"],
+    }
+    req = urllib.request.Request(
+        "https://api.stripe.com/v1/checkout/sessions",
+        data=urllib.parse.urlencode(form).encode(),
+        headers={"Authorization": f"Bearer {STRIPE_SECRET_KEY}"})
+    with urllib.request.urlopen(req, timeout=15) as r:
+        return json.loads(r.read())["url"]
 
 
 def make_handler(db_path, outbox):
@@ -112,6 +176,9 @@ def make_handler(db_path, outbox):
                 f = BASE / "products" / load_products()[row["product_id"]]["file"]
                 return self._send(200, f.read_bytes(), "application/octet-stream",
                                   {"Content-Disposition": f'attachment; filename="{f.name}"'})
+            if self.path == "/thanks":
+                return self._send(200, "ご購入ありがとうございます。ダウンロードURLをメールでお送りします。".encode(),
+                                  "text/plain; charset=utf-8")
             self._json(404, {"error": "not found"})
 
         def do_POST(self):
@@ -123,10 +190,18 @@ def make_handler(db_path, outbox):
                     oid = create_order(db, d["product_id"], d["email"])
                 except (KeyError, ValueError):
                     return self._json(400, {"error": "bad request"})
-                return self._json(201, {"order_id": oid})
+                resp = {"order_id": oid}
+                if STRIPE_SECRET_KEY:
+                    resp["checkout_url"] = create_checkout_session(
+                        oid, load_products()[d["product_id"]], d["email"])
+                return self._json(201, resp)
             if self.path == "/webhook/payment":
                 ok = handle_payment_webhook(db, raw, self.headers.get("X-Signature"),
                                             f"http://{self.headers.get('Host')}", outbox)
+                return self._json(200 if ok else 400, {"ok": ok})
+            if self.path == "/webhook/stripe":
+                ok = handle_stripe_webhook(db, raw, self.headers.get("Stripe-Signature"),
+                                           PUBLIC_URL, outbox)
                 return self._json(200 if ok else 400, {"ok": ok})
             self._json(404, {"error": "not found"})
 

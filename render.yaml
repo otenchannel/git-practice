@@ -1,0 +1,33 @@
+# Render Blueprint: ダッシュボードで "New > Blueprint" からこのリポジトリを選ぶだけでデプロイできる
+services:
+  - type: web
+    name: digital-store
+    runtime: docker
+    plan: starter          # 永続ディスク(SQLite)には有料プランが必要
+    region: singapore      # 日本に最も近いリージョン
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /
+    disk:
+      name: orders-data
+      mountPath: /data
+      sizeGB: 1
+    envVars:
+      - key: DB_PATH
+        value: /data/orders.db
+      - key: DOWNLOAD_SECRET
+        generateValue: true   # 自動で安全なランダム値を生成
+      # 以下はダッシュボードで入力する(コードには書かない)
+      - key: PUBLIC_URL
+        sync: false           # 例: https://digital-store.onrender.com (デプロイ後のURL)
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASSWORD
+        sync: false
+      - key: MAIL_FROM
+        sync: false

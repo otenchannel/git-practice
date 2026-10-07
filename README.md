@@ -51,5 +51,5 @@ Webhook は署名と時刻(5分以内)を検証し、支払済み・金額一致
 - Stripe未設定の開発モードでは「決済が未設定です」と表示されます
 
 ## デプロイ
-Fly.io 用の `Dockerfile` / `fly.toml` を用意しています。手順は [docs/deploy.md](docs/deploy.md)。
+Fly.io([docs/deploy.md](docs/deploy.md)、要PC)と Render([docs/deploy-render.md](docs/deploy-render.md)、スマホのブラウザだけで可)の設定を用意しています。
 本番では `STRIPE_SECRET_KEY` を設定すると起動時に設定を検査し、危険な設定は拒否します。開発用モック決済(`/webhook/payment`)は `ENABLE_MOCK_PAYMENT=1` のときだけ有効です。

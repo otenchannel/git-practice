@@ -1,3 +1,9 @@
 [
-  {"id": "starter-guide", "name": "Starter Guide (PDF/テキスト)", "price_jpy": 1980, "file": "starter-guide.txt"}
+  {
+    "id": "starter-guide",
+    "name": "Starter Guide (PDF/テキスト)",
+    "price_jpy": 1980,
+    "file": "starter-guide.txt",
+    "description": "迷わず最初の一歩を踏み出すための入門ガイド。購入後すぐにダウンロードできます。"
+  }
 ]

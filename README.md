@@ -3,6 +3,8 @@
 デジタル商品販売の自動化(不労所得の仕組み)のプロトタイプです。計画は [docs/plan.md](docs/plan.md) を参照。
 
 ## 試す
+サーバー起動後 http://localhost:8000/ が販売ページです(`store/static/index.html`)。商品は `store/products.json` から自動表示されます。
+
 ```sh
 python3 -m unittest discover -s tests   # テスト
 python3 store/app.py                    # サーバ起動 (:8000)
@@ -42,3 +44,8 @@ Webhook は署名と時刻(5分以内)を検証し、支払済み・金額一致
 
 - 送信に失敗すると Webhook が 400 を返し、Stripe が自動で再送 → 再試行します。`emailed` フラグで二重送信を防ぎます。
 - 本番では独自ドメインの送信元に SPF / DKIM を設定してください(迷惑メール対策)。
+
+## 販売ページ
+- `/` 商品一覧と購入フォーム(メールアドレス入力 → Stripe Checkout へ遷移)、`/legal` 特定商取引法に基づく表記
+- **公開前に `store/static/legal.html` の【】を実際の事業者情報に書き換えてください**(日本で販売する場合は表記が必須です)
+- Stripe未設定の開発モードでは「決済が未設定です」と表示されます

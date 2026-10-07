@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Starter Guide | デジタル商品ストア</title>
+<meta name="description" content="購入後すぐにダウンロードできるデジタル商品ストア。">
+<style>
+  :root { --bg:#fafaf7; --fg:#1d1d1b; --muted:#6b6b66; --card:#fff; --line:#e4e4de; --accent:#2f5d50; --accent-fg:#fff; --err:#b3261e; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#151614; --fg:#ecece6; --muted:#9a9a92; --card:#1e201d; --line:#33362f; --accent:#7fc4ae; --accent-fg:#10201a; --err:#f2877f; }
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg); font:16px/1.7 system-ui,-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif; }
+  main { max-width:720px; margin:0 auto; padding:48px 16px 24px; }
+  h1 { font-size:1.9rem; line-height:1.3; margin:0 0 8px; }
+  .lead { color:var(--muted); margin:0 0 32px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:20px; margin-bottom:16px; }
+  .card h2 { margin:0 0 4px; font-size:1.2rem; }
+  .card p { margin:0 0 16px; color:var(--muted); }
+  .price { font-size:1.5rem; font-weight:700; margin-bottom:12px; }
+  .price small { font-weight:400; color:var(--muted); font-size:.8rem; }
+  label { display:block; font-size:.85rem; color:var(--muted); margin-bottom:4px; }
+  input[type=email] { width:100%; padding:10px 12px; font:inherit; color:inherit; background:var(--bg); border:1px solid var(--line); border-radius:8px; }
+  button { width:100%; margin-top:12px; padding:12px; font:inherit; font-weight:700; color:var(--accent-fg); background:var(--accent); border:0; border-radius:8px; cursor:pointer; }
+  button:disabled { opacity:.6; cursor:wait; }
+  .msg { min-height:1.5em; margin:8px 0 0; font-size:.9rem; color:var(--err); }
+  ul.points { padding-left:1.2em; color:var(--muted); font-size:.9rem; }
+  footer { max-width:720px; margin:0 auto; padding:16px 16px 48px; font-size:.85rem; color:var(--muted); }
+  a { color:inherit; }
+  :focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>購入後すぐ、メールでダウンロード。</h1>
+  <p class="lead">決済が完了すると、ダウンロードURLが入力したメールアドレスに自動で届きます。</p>
+  <div id="products" aria-live="polite">読み込み中…</div>
+  <ul class="points">
+    <li>決済はStripeで安全に処理されます(カード情報は当店に保存されません)</li>
+    <li>ダウンロードURLは購入から24時間有効、3回までダウンロードできます</li>
+    <li>デジタル商品の性質上、ダウンロード後の返品・返金はできません(詳細は<a href="/legal">特定商取引法に基づく表記</a>)</li>
+  </ul>
+</main>
+<footer><a href="/legal">特定商取引法に基づく表記</a></footer>
+<script>
+const yen = n => "¥" + n.toLocaleString("ja-JP");
+const box = document.getElementById("products");
+
+function card(p) {
+  const el = document.createElement("form");
+  el.className = "card";
+  el.innerHTML = `<h2></h2><p></p><div class="price"><span></span> <small>(税込)</small></div>
+    <label>メールアドレス(ダウンロードURLの送付先)</label>
+    <input type="email" name="email" required autocomplete="email" placeholder="you@example.com">
+    <button type="submit">購入する</button><div class="msg" role="alert"></div>`;
+  el.querySelector("h2").textContent = p.name;
+  el.querySelector("p").textContent = p.description || "";
+  el.querySelector(".price span").textContent = yen(p.price_jpy);
+  const btn = el.querySelector("button"), msg = el.querySelector(".msg");
+  el.addEventListener("submit", async e => {
+    e.preventDefault();
+    btn.disabled = true; msg.textContent = "";
+    try {
+      const r = await fetch("/orders", { method: "POST", headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ product_id: p.id, email: el.email.value.trim() }) });
+      if (!r.ok) throw new Error(r.status === 400 ? "メールアドレスをご確認ください。" : "エラーが発生しました。時間をおいてお試しください。");
+      const data = await r.json();
+      if (!data.checkout_url) throw new Error("決済が未設定です(開発モード)。");
+      location.href = data.checkout_url;
+    } catch (err) {
+      msg.textContent = err.message; btn.disabled = false;
+    }
+  });
+  return el;
+}
+
+fetch("/products").then(r => r.json()).then(list => {
+  box.replaceChildren(...list.map(card));
+}).catch(() => { box.textContent = "商品を読み込めませんでした。"; });
+</script>
+</body>
+</html>

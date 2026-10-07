@@ -174,7 +174,7 @@ def create_checkout_session(order_id, product, email):
         "client_reference_id": order_id,
         "customer_email": email,
         "success_url": f"{PUBLIC_URL}/thanks",
-        "cancel_url": f"{PUBLIC_URL}/products",
+        "cancel_url": f"{PUBLIC_URL}/",
         "line_items[0][quantity]": "1",
         "line_items[0][price_data][currency]": "jpy",
         "line_items[0][price_data][unit_amount]": str(product["price_jpy"]),
@@ -203,6 +203,9 @@ def make_handler(db_path, outbox):
 
         def do_GET(self):
             db = connect(db_path)
+            if self.path in ("/", "/legal"):
+                page = "index.html" if self.path == "/" else "legal.html"
+                return self._send(200, (BASE / "static" / page).read_bytes(), "text/html; charset=utf-8")
             if self.path == "/products":
                 return self._json(200, list(load_products().values()))
             if self.path.startswith("/download/"):
@@ -226,13 +229,20 @@ def make_handler(db_path, outbox):
             if self.path == "/orders":
                 try:
                     d = json.loads(raw)
+                    email = d.get("email")
+                    if not isinstance(email, str) or "@" not in email or len(email) > 254:
+                        raise ValueError("invalid email")
                     oid = create_order(db, d["product_id"], d["email"])
                 except (KeyError, ValueError):
                     return self._json(400, {"error": "bad request"})
                 resp = {"order_id": oid}
                 if STRIPE_SECRET_KEY:
-                    resp["checkout_url"] = create_checkout_session(
-                        oid, load_products()[d["product_id"]], d["email"])
+                    try:
+                        resp["checkout_url"] = create_checkout_session(
+                            oid, load_products()[d["product_id"]], d["email"])
+                    except Exception as e:
+                        print(f"stripe checkout failed for order {oid}: {e}")
+                        return self._json(502, {"error": "payment provider unavailable"})
                 return self._json(201, resp)
             if self.path == "/webhook/payment":
                 ok = handle_payment_webhook(db, raw, self.headers.get("X-Signature"),

@@ -131,5 +131,28 @@ class MailTest(unittest.TestCase):
                                  ("send", "a@example.com", "shop@x")])
 
 
+class ConfigTest(unittest.TestCase):
+    def test_production_guard(self):
+        keys = ("STRIPE_SECRET_KEY", "STRIPE_WEBHOOK_SECRET", "DOWNLOAD_SECRET", "PUBLIC_URL", "ENABLE_MOCK_PAYMENT")
+        orig = {k: getattr(app, k) for k in keys}
+        try:
+            app.STRIPE_SECRET_KEY = ""
+            self.assertEqual(app.check_production_config(), [])  # 開発モードは常にOK
+            app.STRIPE_SECRET_KEY = "sk_live_x"
+            app.STRIPE_WEBHOOK_SECRET = b""
+            app.PUBLIC_URL = "http://x"
+            app.ENABLE_MOCK_PAYMENT = True
+            self.assertEqual(len(app.check_production_config()), 4)
+            app.STRIPE_WEBHOOK_SECRET, app.DOWNLOAD_SECRET = b"whsec", b"random-long-secret"
+            app.PUBLIC_URL, app.ENABLE_MOCK_PAYMENT = "https://shop.example.com", False
+            self.assertEqual(app.check_production_config(), [])
+        finally:
+            for k, v in orig.items():
+                setattr(app, k, v)
+
+    def test_mock_route_disabled_by_default(self):
+        self.assertFalse(app.ENABLE_MOCK_PAYMENT)
+
+
 if __name__ == "__main__":
     unittest.main()

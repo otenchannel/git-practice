@@ -1,0 +1,26 @@
+# 初回に `fly launch --no-deploy --copy-config` で app 名を決める(下の app は仮)
+app = "my-digital-store"
+primary_region = "nrt"   # 東京
+
+[build]
+
+[env]
+  PORT = "8000"
+  DB_PATH = "/data/orders.db"
+  PUBLIC_URL = "https://my-digital-store.fly.dev"   # 独自ドメインを使う場合は変更
+  SMTP_PORT = "587"
+
+[mounts]
+  source = "orders_data"   # SQLite用の永続ボリューム(fly volumes create orders_data)
+  destination = "/data"
+
+[http_service]
+  internal_port = 8000
+  force_https = true
+  auto_stop_machines = "off"   # スリープさせない(Webhookの取りこぼし防止)
+  auto_start_machines = true
+  min_machines_running = 1
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "256mb"

@@ -14,7 +14,7 @@ import time
 import urllib.parse
 import urllib.request
 from email.message import EmailMessage
-from http.server import BaseHTTPRequestHandler, HTTPServer
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 BASE = Path(__file__).parent
@@ -28,9 +28,26 @@ SMTP_PORT = int(os.environ.get("SMTP_PORT", 587))  # 465ならSSL、それ以外
 SMTP_USER = os.environ.get("SMTP_USER", "")
 SMTP_PASSWORD = os.environ.get("SMTP_PASSWORD", "")
 MAIL_FROM = os.environ.get("MAIL_FROM", SMTP_USER)
+ENABLE_MOCK_PAYMENT = os.environ.get("ENABLE_MOCK_PAYMENT") == "1"  # 開発専用。本番では絶対に有効にしない
+DB_PATH = os.environ.get("DB_PATH", str(BASE / "orders.db"))
 STRIPE_TOLERANCE_SEC = 300
 LINK_TTL_SEC = int(os.environ.get("LINK_TTL_SEC", 24 * 3600))
 MAX_DOWNLOADS = int(os.environ.get("MAX_DOWNLOADS", 3))
+
+
+def check_production_config():
+    """STRIPE_SECRET_KEY があれば本番とみなし、危険な設定では起動を拒否する。"""
+    problems = []
+    if STRIPE_SECRET_KEY:
+        if not STRIPE_WEBHOOK_SECRET:
+            problems.append("STRIPE_WEBHOOK_SECRET が未設定")
+        if DOWNLOAD_SECRET == b"dev-download-secret":
+            problems.append("DOWNLOAD_SECRET が開発用の既定値")
+        if ENABLE_MOCK_PAYMENT:
+            problems.append("ENABLE_MOCK_PAYMENT が有効")
+        if not PUBLIC_URL.startswith("https://"):
+            problems.append("PUBLIC_URL が https:// ではない")
+    return problems
 
 
 def load_products():
@@ -244,7 +261,7 @@ def make_handler(db_path, outbox):
                         print(f"stripe checkout failed for order {oid}: {e}")
                         return self._json(502, {"error": "payment provider unavailable"})
                 return self._json(201, resp)
-            if self.path == "/webhook/payment":
+            if self.path == "/webhook/payment" and ENABLE_MOCK_PAYMENT:
                 ok = handle_payment_webhook(db, raw, self.headers.get("X-Signature"),
                                             f"http://{self.headers.get('Host')}", outbox)
                 return self._json(200 if ok else 400, {"ok": ok})
@@ -261,7 +278,10 @@ def make_handler(db_path, outbox):
 
 
 if __name__ == "__main__":
-    outbox = []
+    problems = check_production_config()
+    if problems:
+        raise SystemExit("設定エラー: " + " / ".join(problems))
+    outbox = []  # 開発時の確認用。本番ではメール送信が本体
     port = int(os.environ.get("PORT", 8000))
     print(f"listening on :{port}")
-    HTTPServer(("", port), make_handler(str(BASE / "orders.db"), outbox)).serve_forever()
+    ThreadingHTTPServer(("", port), make_handler(DB_PATH, outbox)).serve_forever()

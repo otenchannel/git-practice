@@ -49,3 +49,7 @@ Webhook は署名と時刻(5分以内)を検証し、支払済み・金額一致
 - `/` 商品一覧と購入フォーム(メールアドレス入力 → Stripe Checkout へ遷移)、`/legal` 特定商取引法に基づく表記
 - **公開前に `store/static/legal.html` の【】を実際の事業者情報に書き換えてください**(日本で販売する場合は表記が必須です)
 - Stripe未設定の開発モードでは「決済が未設定です」と表示されます
+
+## デプロイ
+Fly.io 用の `Dockerfile` / `fly.toml` を用意しています。手順は [docs/deploy.md](docs/deploy.md)。
+本番では `STRIPE_SECRET_KEY` を設定すると起動時に設定を検査し、危険な設定は拒否します。開発用モック決済(`/webhook/payment`)は `ENABLE_MOCK_PAYMENT=1` のときだけ有効です。

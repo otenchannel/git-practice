@@ -30,3 +30,15 @@ curl -XPOST localhost:8000/orders -d '{"product_id":"starter-guide","email":"a@e
 
 Webhook は署名と時刻(5分以内)を検証し、支払済み・金額一致の場合のみ納品します。
 `/webhook/payment` はStripeなしの開発用モックです。
+
+## メール送信(SMTP)
+決済完了後、購入者にダウンロードURLをメールで送ります。`SMTP_HOST` を設定すると有効になります(未設定なら送信せず `outbox` に積むだけの開発モード)。
+
+| 変数 | 内容 |
+|---|---|
+| `SMTP_HOST` / `SMTP_PORT` | 例: `smtp.gmail.com` / `587`(465はSSL、それ以外はSTARTTLS) |
+| `SMTP_USER` / `SMTP_PASSWORD` | SMTP認証情報(Gmailは「アプリパスワード」) |
+| `MAIL_FROM` | 送信元アドレス(未設定なら `SMTP_USER`) |
+
+- 送信に失敗すると Webhook が 400 を返し、Stripe が自動で再送 → 再試行します。`emailed` フラグで二重送信を防ぎます。
+- 本番では独自ドメインの送信元に SPF / DKIM を設定してください(迷惑メール対策)。

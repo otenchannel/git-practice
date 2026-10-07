@@ -8,10 +8,12 @@ import hmac
 import json
 import os
 import secrets
+import smtplib
 import sqlite3
 import time
 import urllib.parse
 import urllib.request
+from email.message import EmailMessage
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
 
@@ -21,6 +23,11 @@ DOWNLOAD_SECRET = os.environ.get("DOWNLOAD_SECRET", "dev-download-secret").encod
 STRIPE_SECRET_KEY = os.environ.get("STRIPE_SECRET_KEY", "")
 STRIPE_WEBHOOK_SECRET = os.environ.get("STRIPE_WEBHOOK_SECRET", "").encode()
 PUBLIC_URL = os.environ.get("PUBLIC_URL", "http://localhost:8000")
+SMTP_HOST = os.environ.get("SMTP_HOST", "")
+SMTP_PORT = int(os.environ.get("SMTP_PORT", 587))  # 465ならSSL、それ以外はSTARTTLS
+SMTP_USER = os.environ.get("SMTP_USER", "")
+SMTP_PASSWORD = os.environ.get("SMTP_PASSWORD", "")
+MAIL_FROM = os.environ.get("MAIL_FROM", SMTP_USER)
 STRIPE_TOLERANCE_SEC = 300
 LINK_TTL_SEC = int(os.environ.get("LINK_TTL_SEC", 24 * 3600))
 MAX_DOWNLOADS = int(os.environ.get("MAX_DOWNLOADS", 3))
@@ -35,8 +42,30 @@ def connect(db_path):
     db.row_factory = sqlite3.Row
     db.execute("""CREATE TABLE IF NOT EXISTS orders(
         id TEXT PRIMARY KEY, product_id TEXT, email TEXT, status TEXT,
-        downloads INTEGER DEFAULT 0, created_at REAL)""")
+        downloads INTEGER DEFAULT 0, created_at REAL, emailed INTEGER DEFAULT 0)""")
+    try:  # 既存DBの移行
+        db.execute("ALTER TABLE orders ADD COLUMN emailed INTEGER DEFAULT 0")
+    except sqlite3.OperationalError:
+        pass
     return db
+
+
+def send_mail(msg):
+    """メール送信。SMTP_HOST未設定なら何もしない(開発時は outbox に残るだけ)。失敗時は例外。"""
+    if not SMTP_HOST:
+        return
+    m = EmailMessage()
+    m["From"], m["To"], m["Subject"] = MAIL_FROM, msg["to"], msg["subject"]
+    m.set_content(msg["body"])
+    if SMTP_PORT == 465:
+        smtp = smtplib.SMTP_SSL(SMTP_HOST, SMTP_PORT, timeout=15)
+    else:
+        smtp = smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=15)
+        smtp.starttls()
+    with smtp:
+        if SMTP_USER:
+            smtp.login(SMTP_USER, SMTP_PASSWORD)
+        smtp.send_message(m)
 
 
 def sign(data: bytes, secret: bytes) -> str:
@@ -65,9 +94,9 @@ def verify_token(token, now=None):
         order_id, exp, sig = token.rsplit(".", 2)
     except ValueError:
         return None
-    if not hmac.compare_digest(sig, sign(f"{order_id}.{exp}".encode(), DOWNLOAD_SECRET)):
+    if not hmac.compare_digest(sig.encode(), sign(f"{order_id}.{exp}".encode(), DOWNLOAD_SECRET).encode()):
         return None
-    if int(exp) < (now or time.time()):
+    if not exp.isdigit() or int(exp) < (now or time.time()):
         return None
     return order_id
 
@@ -90,13 +119,23 @@ def fulfill_order(db, order_id, base_url, outbox, amount_jpy=None):
     product = load_products()[row["product_id"]]
     if amount_jpy is not None and amount_jpy != product["price_jpy"]:
         return False
-    if row["status"] == "paid":
+    if row["emailed"]:
         return True
     db.execute("UPDATE orders SET status='paid' WHERE id=?", (row["id"],))
     db.commit()
     link = f"{base_url}/download/{make_token(row['id'])}"
-    outbox.append({"to": row["email"], "subject": f"ご購入ありがとうございます: {product['name']}",
-                   "body": f"ダウンロードURL(24時間有効・{MAX_DOWNLOADS}回まで): {link}"})
+    msg = {"to": row["email"], "subject": f"ご購入ありがとうございます: {product['name']}",
+           "body": f"{product['name']} をご購入いただきありがとうございます。\n\n"
+                   f"ダウンロードURL(24時間有効・{MAX_DOWNLOADS}回まで):\n{link}\n\n"
+                   "期限が切れた場合はこのメールにご返信ください。"}
+    try:
+        send_mail(msg)
+    except Exception as e:  # 失敗時は未送信のまま残し、Webhook再送で再試行させる
+        print(f"mail failed for order {row['id']}: {e}")
+        return False
+    outbox.append(msg)
+    db.execute("UPDATE orders SET emailed=1 WHERE id=?", (row["id"],))
+    db.commit()
     return True
 
 

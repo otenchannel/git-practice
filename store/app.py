@@ -1,0 +1,143 @@
+"""デジタル商品販売の自動化プロトタイプ(標準ライブラリのみ)。
+
+流れ: 注文作成 -> 決済プロバイダの Webhook(HMAC署名検証) -> 署名付き期限付きDL URLを発行 -> メール送信(outbox)
+本番では PaymentProvider/メール送信部分を Stripe 等と SMTP/メールAPIに差し替える。
+"""
+import hashlib
+import hmac
+import json
+import os
+import secrets
+import sqlite3
+import time
+from http.server import BaseHTTPRequestHandler, HTTPServer
+from pathlib import Path
+
+BASE = Path(__file__).parent
+WEBHOOK_SECRET = os.environ.get("WEBHOOK_SECRET", "dev-webhook-secret").encode()
+DOWNLOAD_SECRET = os.environ.get("DOWNLOAD_SECRET", "dev-download-secret").encode()
+LINK_TTL_SEC = int(os.environ.get("LINK_TTL_SEC", 24 * 3600))
+MAX_DOWNLOADS = int(os.environ.get("MAX_DOWNLOADS", 3))
+
+
+def load_products():
+    return {p["id"]: p for p in json.loads((BASE / "products.json").read_text(encoding="utf-8"))}
+
+
+def connect(db_path):
+    db = sqlite3.connect(db_path)
+    db.row_factory = sqlite3.Row
+    db.execute("""CREATE TABLE IF NOT EXISTS orders(
+        id TEXT PRIMARY KEY, product_id TEXT, email TEXT, status TEXT,
+        downloads INTEGER DEFAULT 0, created_at REAL)""")
+    return db
+
+
+def sign(data: bytes, secret: bytes) -> str:
+    return hmac.new(secret, data, hashlib.sha256).hexdigest()
+
+
+def create_order(db, product_id, email):
+    if product_id not in load_products():
+        raise KeyError(product_id)
+    oid = secrets.token_urlsafe(8)
+    db.execute("INSERT INTO orders(id,product_id,email,status,created_at) VALUES(?,?,?,?,?)",
+               (oid, product_id, email, "pending", time.time()))
+    db.commit()
+    return oid
+
+
+def make_token(order_id, now=None):
+    exp = int((now or time.time()) + LINK_TTL_SEC)
+    payload = f"{order_id}.{exp}"
+    return f"{payload}.{sign(payload.encode(), DOWNLOAD_SECRET)}"
+
+
+def verify_token(token, now=None):
+    """有効なら order_id を返す。無効/期限切れは None。"""
+    try:
+        order_id, exp, sig = token.rsplit(".", 2)
+    except ValueError:
+        return None
+    if not hmac.compare_digest(sig, sign(f"{order_id}.{exp}".encode(), DOWNLOAD_SECRET)):
+        return None
+    if int(exp) < (now or time.time()):
+        return None
+    return order_id
+
+
+def handle_payment_webhook(db, raw_body: bytes, signature: str, base_url, outbox):
+    """決済完了通知を処理。署名不正は False。冪等(二重通知でも二重送信しない)。"""
+    if not hmac.compare_digest(signature or "", sign(raw_body, WEBHOOK_SECRET)):
+        return False
+    event = json.loads(raw_body)
+    if event.get("type") != "payment.succeeded":
+        return True
+    row = db.execute("SELECT * FROM orders WHERE id=?", (event["order_id"],)).fetchone()
+    if row is None or row["status"] == "paid":
+        return row is not None
+    db.execute("UPDATE orders SET status='paid' WHERE id=?", (row["id"],))
+    db.commit()
+    product = load_products()[row["product_id"]]
+    link = f"{base_url}/download/{make_token(row['id'])}"
+    outbox.append({"to": row["email"], "subject": f"ご購入ありがとうございます: {product['name']}",
+                   "body": f"ダウンロードURL(24時間有効・{MAX_DOWNLOADS}回まで): {link}"})
+    return True
+
+
+def make_handler(db_path, outbox):
+    class Handler(BaseHTTPRequestHandler):
+        def _send(self, code, body=b"", ctype="application/json", extra=None):
+            self.send_response(code)
+            self.send_header("Content-Type", ctype)
+            for k, v in (extra or {}).items():
+                self.send_header(k, v)
+            self.end_headers()
+            self.wfile.write(body)
+
+        def _json(self, code, obj):
+            self._send(code, json.dumps(obj, ensure_ascii=False).encode())
+
+        def do_GET(self):
+            db = connect(db_path)
+            if self.path == "/products":
+                return self._json(200, list(load_products().values()))
+            if self.path.startswith("/download/"):
+                order_id = verify_token(self.path[len("/download/"):])
+                row = order_id and db.execute("SELECT * FROM orders WHERE id=?", (order_id,)).fetchone()
+                if not row or row["status"] != "paid" or row["downloads"] >= MAX_DOWNLOADS:
+                    return self._json(403, {"error": "invalid, expired or download limit reached"})
+                db.execute("UPDATE orders SET downloads=downloads+1 WHERE id=?", (order_id,))
+                db.commit()
+                f = BASE / "products" / load_products()[row["product_id"]]["file"]
+                return self._send(200, f.read_bytes(), "application/octet-stream",
+                                  {"Content-Disposition": f'attachment; filename="{f.name}"'})
+            self._json(404, {"error": "not found"})
+
+        def do_POST(self):
+            db = connect(db_path)
+            raw = self.rfile.read(int(self.headers.get("Content-Length", 0)))
+            if self.path == "/orders":
+                try:
+                    d = json.loads(raw)
+                    oid = create_order(db, d["product_id"], d["email"])
+                except (KeyError, ValueError):
+                    return self._json(400, {"error": "bad request"})
+                return self._json(201, {"order_id": oid})
+            if self.path == "/webhook/payment":
+                ok = handle_payment_webhook(db, raw, self.headers.get("X-Signature"),
+                                            f"http://{self.headers.get('Host')}", outbox)
+                return self._json(200 if ok else 400, {"ok": ok})
+            self._json(404, {"error": "not found"})
+
+        def log_message(self, *a):
+            pass
+
+    return Handler
+
+
+if __name__ == "__main__":
+    outbox = []
+    port = int(os.environ.get("PORT", 8000))
+    print(f"listening on :{port}")
+    HTTPServer(("", port), make_handler(str(BASE / "orders.db"), outbox)).serve_forever()

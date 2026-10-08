@@ -6,5 +6,5 @@
 
 ## 開発環境
 - 開発PC: 研究室PCまたは自前のビルトインPC(GPU性能を確認: VR開発はGTX 1060 / RTX 2060相当以上が目安)
-- ヘッドセット: 未確認(Quest 3なら Link/Air Link でPC接続、またはAndroidビルド)。ヘッドセットが使えない場合はデスクトップ操作のモードも用意し、実験は研究室機材で行う
+- ヘッドセット: 研究室の機材を使用(機種は要確認。Quest系ならLink/Air Link接続またはAndroidビルド、PC接続型ならOpenXR経由)。デスクトップ操作モードも予備として用意する
 - Unityのバージョンは両PCで統一する(`ProjectSettings/ProjectVersion.txt` で管理)

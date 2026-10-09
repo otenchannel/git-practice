@@ -5,6 +5,6 @@ S03,論文,絵図からみた楠葉台場と梶原台場,藤田裕嗣,2010,S01�
 S04,行政資料,文化財保存活用関連資料,枚方市,2026,https://www.city.hirakata.osaka.jp/cmsfiles/contents/0000045/45365/15_20260210soumu.pdf,未精読,活用方針
 S05,概説,楠葉台場跡,tabi-mag.jp,不明,https://tabi-mag.jp/os0401/,未精読,二次情報。規模3.8ha等は要裏取り
 S06,地形データ,DEM/点群,国土地理院ほか,,,未調査,取得可否・精度確認
-S07,書誌,楠葉台場跡 NCID BB02959979,CiNii Books,,http://ci.nii.ac.jp/ncid/BB02959979,未確認,所蔵図書館の検索に使う
+S07,書誌,楠葉台場跡 NCID BB02959979,CiNii Books,2010,http://ci.nii.ac.jp/ncid/BB02959979,確認済,大学図書館13館が所蔵(data/holdings.csv)。本編+史料編の2冊組。史料編の編集は枚方市立中央図書館市史資料室
 S08,行政,枚方市文化財担当ページ,枚方市,,http://www.city.hirakata.osaka.jp/soshiki/11-2-0-0-0_13.html,未確認,報告書の頒布・閲覧の問い合わせ先候補
 S09,位置情報,文化財総覧WebGIS,奈良文化財研究所,,https://heritagemap.nabunken.go.jp/,未確認,台場跡の位置(北緯34.8763 東経135.6814付近)

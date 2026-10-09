@@ -135,9 +135,11 @@ def fulfill_order(db, order_id, base_url, outbox, amount_jpy=None):
     """入金確認済みの注文を確定し、DL URLを送る。冪等。注文が無い/金額不一致は False。"""
     row = db.execute("SELECT * FROM orders WHERE id=?", (order_id,)).fetchone()
     if row is None:
+        print(f"fulfill failed: order not found: {order_id!r}")
         return False
     product = load_products()[row["product_id"]]
     if amount_jpy is not None and amount_jpy != product["price_jpy"]:
+        print(f"fulfill failed: amount mismatch for order {order_id}: paid={amount_jpy} price={product['price_jpy']}")
         return False
     if row["emailed"]:
         return True
@@ -175,6 +177,8 @@ def verify_stripe_signature(raw_body: bytes, header: str, secret=None, now=None)
 
 def handle_stripe_webhook(db, raw_body: bytes, header: str, base_url, outbox):
     if not verify_stripe_signature(raw_body, header):
+        print("stripe webhook rejected: signature verification failed "
+              "(STRIPE_WEBHOOK_SECRET がこのエンドポイントのものか、時刻のずれ、またはヘッダ欠落)")
         return False
     event = json.loads(raw_body)
     if event.get("type") not in ("checkout.session.completed",

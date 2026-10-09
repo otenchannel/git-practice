@@ -187,19 +187,26 @@ def handle_stripe_webhook(db, raw_body: bytes, header: str, base_url, outbox):
                          amount_jpy=obj.get("amount_total"))
 
 
-def create_checkout_session(order_id, product, email):
-    """Stripe Checkout Session を作成し、決済ページURLを返す。"""
-    form = {
+def checkout_form(order_id, product, email):
+    """Stripe Checkout Session 作成用のフォーム値。"""
+    return {
         "mode": "payment",
         "client_reference_id": order_id,
         "customer_email": email,
         "success_url": f"{PUBLIC_URL}/thanks",
         "cancel_url": f"{PUBLIC_URL}/",
+        # 自分が販売者として販売する前提(特商法表記と一致)。Managed Payments は商品の税コードが必須のため無効化
+        "managed_payments[enabled]": "false",
         "line_items[0][quantity]": "1",
         "line_items[0][price_data][currency]": "jpy",
         "line_items[0][price_data][unit_amount]": str(product["price_jpy"]),
         "line_items[0][price_data][product_data][name]": product["name"],
     }
+
+
+def create_checkout_session(order_id, product, email):
+    """Stripe Checkout Session を作成し、決済ページURLを返す。"""
+    form = checkout_form(order_id, product, email)
     req = urllib.request.Request(
         "https://api.stripe.com/v1/checkout/sessions",
         data=urllib.parse.urlencode(form).encode(),

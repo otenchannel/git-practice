@@ -131,6 +131,16 @@ class MailTest(unittest.TestCase):
                                  ("send", "a@example.com", "shop@x")])
 
 
+class CheckoutFormTest(unittest.TestCase):
+    def test_form_values(self):
+        product = app.load_products()["starter-guide"]
+        f = app.checkout_form("o1", product, "a@example.com")
+        self.assertEqual(f["managed_payments[enabled]"], "false")
+        self.assertEqual(f["client_reference_id"], "o1")
+        self.assertEqual(f["line_items[0][price_data][unit_amount]"], str(product["price_jpy"]))
+        self.assertEqual(f["line_items[0][price_data][currency]"], "jpy")
+
+
 class ConfigTest(unittest.TestCase):
     def test_production_guard(self):
         keys = ("SMTP_HOST", "STRIPE_SECRET_KEY", "STRIPE_WEBHOOK_SECRET", "DOWNLOAD_SECRET", "PUBLIC_URL", "ENABLE_MOCK_PAYMENT")

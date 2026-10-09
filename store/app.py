@@ -43,6 +43,8 @@ def check_production_config():
             problems.append("STRIPE_WEBHOOK_SECRET が未設定")
         if DOWNLOAD_SECRET == b"dev-download-secret":
             problems.append("DOWNLOAD_SECRET が開発用の既定値")
+        if not SMTP_HOST:
+            problems.append("SMTP_HOST が未設定(購入者にメールが届かない)")
         if ENABLE_MOCK_PAYMENT:
             problems.append("ENABLE_MOCK_PAYMENT が有効")
         if not PUBLIC_URL.startswith("https://"):

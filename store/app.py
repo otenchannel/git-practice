@@ -11,6 +11,7 @@ import secrets
 import smtplib
 import sqlite3
 import time
+import urllib.error
 import urllib.parse
 import urllib.request
 from email.message import EmailMessage
@@ -203,8 +204,11 @@ def create_checkout_session(order_id, product, email):
         "https://api.stripe.com/v1/checkout/sessions",
         data=urllib.parse.urlencode(form).encode(),
         headers={"Authorization": f"Bearer {STRIPE_SECRET_KEY}"})
-    with urllib.request.urlopen(req, timeout=15) as r:
-        return json.loads(r.read())["url"]
+    try:
+        with urllib.request.urlopen(req, timeout=15) as r:
+            return json.loads(r.read())["url"]
+    except urllib.error.HTTPError as e:  # Stripeのエラー本文(理由)をログに残す。鍵は含まれない
+        raise RuntimeError(f"Stripe {e.code}: {e.read()[:500].decode('utf-8', 'replace')}") from None
 
 
 def make_handler(db_path, outbox):

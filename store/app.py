@@ -21,9 +21,9 @@ from pathlib import Path
 BASE = Path(__file__).parent
 WEBHOOK_SECRET = os.environ.get("WEBHOOK_SECRET", "dev-webhook-secret").encode()
 DOWNLOAD_SECRET = os.environ.get("DOWNLOAD_SECRET", "dev-download-secret").encode()
-STRIPE_SECRET_KEY = os.environ.get("STRIPE_SECRET_KEY", "")
-STRIPE_WEBHOOK_SECRET = os.environ.get("STRIPE_WEBHOOK_SECRET", "").encode()
-PUBLIC_URL = os.environ.get("PUBLIC_URL", "http://localhost:8000")
+STRIPE_SECRET_KEY = os.environ.get("STRIPE_SECRET_KEY", "").strip()
+STRIPE_WEBHOOK_SECRET = os.environ.get("STRIPE_WEBHOOK_SECRET", "").strip().encode()
+PUBLIC_URL = os.environ.get("PUBLIC_URL", "http://localhost:8000").strip().rstrip("/")
 SMTP_HOST = os.environ.get("SMTP_HOST", "")
 SMTP_PORT = int(os.environ.get("SMTP_PORT", 587))  # 465ならSSL、それ以外はSTARTTLS
 SMTP_USER = os.environ.get("SMTP_USER", "")
@@ -287,6 +287,9 @@ if __name__ == "__main__":
     problems = check_production_config()
     if problems:
         raise SystemExit("設定エラー: " + " / ".join(problems))
+    if STRIPE_SECRET_KEY:  # キー本体は出さず、長さと接頭辞の種別だけ出す(コピー切れの切り分け用)
+        print(f"stripe key: length={len(STRIPE_SECRET_KEY)} prefix={STRIPE_SECRET_KEY[:8]!r} "
+              f"webhook_secret_length={len(STRIPE_WEBHOOK_SECRET)}")
     outbox = []  # 開発時の確認用。本番ではメール送信が本体
     port = int(os.environ.get("PORT", 8000))
     print(f"listening on :{port}")

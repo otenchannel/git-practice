@@ -8,3 +8,9 @@
 - 開発PC: 研究室PCまたは自前のビルトインPC(GPU性能を確認: VR開発はGTX 1060 / RTX 2060相当以上が目安)
 - ヘッドセット: 研究室の機材を使用(機種は要確認。Quest系ならLink/Air Link接続またはAndroidビルド、PC接続型ならOpenXR経由)。デスクトップ操作モードも予備として用意する
 - Unityのバージョンは両PCで統一する(`ProjectSettings/ProjectVersion.txt` で管理)
+
+## スクリプト(未コンパイル・Unityで要確認)
+`KuzuhaDaiba/Assets/Scripts/` に根拠データの読み込みと色分けの雛形がある。Unityプロジェクト作成後にコンパイルエラーがないか確認すること。
+- `EvidenceDatabase`: `StreamingAssets/evidence.csv` を読む(空のGameObjectに付ける)
+- `EvidenceTag`: 復元モデルに付け、`element` 名で根拠レベルを色分け
+- `sync-evidence.sh`: `data/evidence.csv` を StreamingAssets にコピー(`evidence.csv` を更新したら実行)

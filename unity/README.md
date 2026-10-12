@@ -1,6 +1,6 @@
 # Unity プロジェクト方針
 - Unity LTS(最新版)、OpenXR + XR Interaction Toolkit、Meta Quest 3想定
-- 機能(MVP): 現地スケール歩行、現況⇔復元の切替、根拠レベルの色分け(confirmed/estimated/speculative)、解説表示
+- 機能(MVP): 現地スケール歩行、現況⇔復元の切替、根拠レベル(A確認済み/B史料/C推定/D演出/U未復元)の色分け、解説表示
 - `data/evidence.csv` をScriptableObject等に取り込み、各モデルに根拠を紐付ける
 - プロジェクト作成後、`.gitignore`(Library/ Temp/ 等)とGit LFSを設定する
 

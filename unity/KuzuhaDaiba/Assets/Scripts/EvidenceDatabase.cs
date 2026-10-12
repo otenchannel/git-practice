@@ -3,7 +3,7 @@ using System.IO;
 using UnityEngine;
 
 // StreamingAssets/evidence.csv(data/evidence.csv のコピー)を読み込む
-// 列: element,description,evidence_level,source_ids,note
+// 列: element,description,evidence_level(A-U),source_ids,note[,original_value]
 // 注意: 簡易CSVパーサ。値にカンマや改行を含めない運用とする
 public class EvidenceDatabase : MonoBehaviour
 {
@@ -29,11 +29,13 @@ public class EvidenceDatabase : MonoBehaviour
             entries[c[0]] = new Entry
             {
                 Element = c[0], Description = c[1], SourceIds = c[3], Note = c[4],
-                Level = c[2].Trim().ToLowerInvariant() switch
+                Level = c[2].Trim().ToUpperInvariant() switch
                 {
-                    "confirmed" => EvidenceLevel.Confirmed,
-                    "estimated" => EvidenceLevel.Estimated,
-                    _ => EvidenceLevel.Speculative,
+                    "A" => EvidenceLevel.A,
+                    "B" => EvidenceLevel.B,
+                    "C" => EvidenceLevel.C,
+                    "D" => EvidenceLevel.D,
+                    _ => EvidenceLevel.U,
                 },
             };
         }

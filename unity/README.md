@@ -14,3 +14,9 @@
 - `EvidenceDatabase`: `StreamingAssets/evidence.csv` を読む(空のGameObjectに付ける)
 - `EvidenceTag`: 復元モデルに付け、`element` 名で根拠レベルを色分け
 - `sync-evidence.sh`: `data/evidence.csv` を StreamingAssets にコピー(`evidence.csv` を更新したら実行)
+
+## バージョン管理(2026-10-12 記録)
+- Unity: 6.6(自宅PCにインストール済み。パッチ番号は `ProjectSettings/ProjectVersion.txt` で確認して追記する)
+- Unity Hub: 3.22.2 / ライセンス: Personal
+- 研究室PCにも**同じ 6.6 の同じパッチ**を入れる。研究期間(〜12月末)中は途中でバージョンを上げない
+- 6.6 が LTS かどうかは未確認(Hub の案内では 6.7 が LTS と読める)。XR関連パッケージの互換は、プロジェクト作成後に Package Manager で確認する

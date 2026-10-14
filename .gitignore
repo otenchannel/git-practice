@@ -1,0 +1,6 @@
+
+# 市職員から頂いた資料・撮影画像・それらから起こしたデータは公開しない(リポジトリは公開設定)
+data/private/
+data/raw/**
+!data/raw/**/.gitkeep
+unity/KuzuhaDaiba/Assets/StreamingAssets/private/

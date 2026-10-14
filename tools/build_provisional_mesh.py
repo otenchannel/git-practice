@@ -29,6 +29,7 @@ NAT = {'nat_terrain': (0.40, 0.48, 0.27), 'nat_dirt': (0.52, 0.42, 0.30), 'nat_s
 def nat_mat(name, mat):
     """立体の名前から自然色の材質を決める"""
     n = name.lower()
+    if n == 'site_base': return 'nat_dirt'
     if 'stone' in n: return 'nat_stone'
     if any(k in n for k in ('post', 'beam', 'fence', 'frame', 'eave')): return 'nat_wood'
     if 'roof' in n: return 'nat_roof'
@@ -92,8 +93,8 @@ class Solids:
 
     def __init__(self, sx, base_fn=None): self.items, self.sx, self.base_fn = [], sx, base_fn
 
-    def add(self, name, mat, verts, faces):
-        if self.base_fn:  # 立体の中心の地面の高さ(Y=0基準)だけ持ち上げる
+    def add(self, name, mat, verts, faces, absolute=False):
+        if self.base_fn and not absolute:  # 立体の中心の地面の高さ(Y=0基準)だけ持ち上げる
             dy = self.base_fn(np.mean([v[0] for v in verts]), np.mean([v[2] for v in verts]))
             verts = [(v[0], v[1] + dy, v[2]) for v in verts]
         self.items.append((name, mat, verts, faces))
@@ -173,6 +174,7 @@ def main():
     ap.add_argument('--no-flip-x', action='store_true'); ap.add_argument('--smooth', type=int, default=2)
     ap.add_argument('--dem'); ap.add_argument('--dem-meta'); ap.add_argument('--origin', help='原点(番所)の緯度,経度')
     ap.add_argument('--datum-m', type=float, default=5.0); ap.add_argument('--dem-sigma-m', type=float, default=12.0)
+    ap.add_argument('--skirt-depth', type=float, default=3.0, help='地面の外周から下へ立てる壁(土台)の深さ[m]。0で無効')
     ap.add_argument('--legacy-blur', action='store_true', help='距離場の台形断面ではなく、従来の3x3平滑化を使う'); ap.add_argument('--ss', type=int, default=2)
     a = ap.parse_args()
     reg = json.load(open(a.regions, encoding='utf-8')); cfg = json.load(open(a.objmap, encoding='utf-8'))
@@ -346,6 +348,13 @@ def main():
     Ht = H + B
     ddE = np.gradient(Ht, cell, axis=1); ddN = -np.gradient(Ht, cell, axis=0)  # 行が増えると北が減る
     nrm = np.stack([-ddE, np.ones_like(Ht), -ddN], -1); nrm /= np.linalg.norm(nrm, axis=-1, keepdims=True)
+
+    if a.skirt_depth > 0:  # 地面を箱状の土台にして、どの角度から見ても地面が消えないようにする(外周の壁+底面)
+        ring = [(i, 0) for i in range(nx)] + [(nx - 1, j) for j in range(1, ny)] + [(i, ny - 1) for i in range(nx - 2, -1, -1)] + [(0, j) for j in range(ny - 2, 0, -1)]
+        m_ = len(ring); y_bot = -a.skirt_depth
+        sv = [(xmin + i * cell, float(Ht[j, i]), ymax - j * cell) for i, j in ring] + [(xmin + i * cell, y_bot, ymax - j * cell) for i, j in ring]
+        sf = [(k, (k + 1) % m_, m_ + (k + 1) % m_, m_ + k) for k in range(m_)] + [tuple(range(m_, 2 * m_))]
+        solids.add('site_base', 'ground', sv, sf, absolute=True)
 
     def emit(prefix, comment, mats, terrain_mat, solid_mat_fn):
         with open(os.path.join(a.outdir, prefix + '.mtl'), 'w') as f:

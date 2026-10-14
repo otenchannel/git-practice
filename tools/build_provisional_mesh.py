@@ -78,7 +78,7 @@ class Solids:
 
     def write(self, f, base):
         for name, mat, verts, faces in self.items:
-            f.write(f'o {name}\nusemtl {mat}\n')
+            f.write(f'o {name}\ng {name}\nusemtl {mat}\n')  # UnityのOBJ取り込みは g 行で部材を分ける
             for e, y, n in verts: f.write(f'v {self.sx * e:.2f} {y:.2f} {n:.2f}\n')
             ctr = np.mean([(self.sx * e, y, n) for e, y, n in verts], axis=0)
             for fa in faces:
@@ -229,7 +229,7 @@ def main():
     with open(os.path.join(a.outdir, 'kuzuha_provisional.mtl'), 'w') as f:
         for n, col in MATS.items(): f.write(f'newmtl {n}\nKd {col[0]} {col[1]} {col[2]}\n')
     with open(os.path.join(a.outdir, 'kuzuha_provisional.obj'), 'w') as f:
-        f.write('# 楠葉台場 暫定メッシュ(縮尺・形状は仮。根拠区分で色分け)\nmtllib kuzuha_provisional.mtl\no site_terrain\n')
+        f.write('# 楠葉台場 暫定メッシュ(縮尺・形状は仮。根拠区分で色分け)\nmtllib kuzuha_provisional.mtl\no site_terrain\ng site_terrain\n')
         for j in range(ny):
             for i in range(nx): f.write(f'v {X[i]:.2f} {H[j, i]:.2f} {Z[j]:.2f}\n')
         for n in names:

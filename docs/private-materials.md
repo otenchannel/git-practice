@@ -16,6 +16,7 @@ python3 tools/extract_map_regions.py data/raw/terrain/20261014_hirakata_map_over
 python3 tools/build_provisional_mesh.py data/private/geo/regions.json data/private/geo/object-map.json data/private/geo/mesh --scale 0.353
 ```
 出力: `kuzuha_provisional.obj/.mtl`(暫定メッシュ)、`object-ledger.csv`(部材ごとの根拠区分)、`preview_topdown.png`、`mesh-stats.json`。
+斜めからの確認用: `python3 tools/preview_oblique.py data/private/geo/mesh/kuzuha_provisional.obj out.png <東m> <北m> <半径m> --flip-x --az 200`
 
 ## Unityへの取り込み
 1. `kuzuha_provisional.obj` と `.mtl` を `Assets/Private/`(gitignore対象にすること)へコピーする。
@@ -29,3 +30,16 @@ python3 tools/build_provisional_mesh.py data/private/geo/regions.json data/priva
 - 土塁・堀の断面は台形ではなく、領域に高さ・深さを与えて3×3平滑化を2回かけた仮の斜面。
 - 堀(西面・北・東)の深さは根拠がなく、1mの仮値(根拠区分U)。
 - 地面は平坦と仮定。標高点では台場内が約13.2m、東側が約15.5mで、実際は東が約2m高い。DEMを入手して置き換える。
+
+## 立体化した部材(2026-10-14)
+| 部材 | 作り方 | 位置の根拠 | 根拠区分 |
+|---|---|---|---|
+| 虎口(南・北1・北2・東) | 土塁に幅4mの通路を切り、冠木門(柱2本+冠木)、通路の両側に高さ1.9mの石積み、北1は両翼に木柵 | 地形図の土塁・堀の途切れ、既存道路が北辺を横切る点 | 位置D・寸法B |
+| 土橋(南・北×2) | 堀を切らずに残した帯(幅4m。南は長さ13.8m・高さ5.3m、北は長さ4m・高さ1.65m) | 各虎口の外側 | 位置D・寸法B |
+| 番所 | 南北棟15.8×7.9m、切妻屋根 | 地形図の橙の領域 | 位置C・寸法B・屋根D |
+| 火薬庫 | 東西棟6×4m、切妻、南側に庇 | 北東の土塁の内側(目測) | 位置D・寸法B・屋根D |
+| 箱番所(南虎口脇) | 2.2m角の箱 | 地形図の小さな記号 | 位置D・形D |
+
+- 北・東の堀(溝)の深さは、北土橋の高さ1.65mに合わせた(南は土橋の高さ=堀の深さ5.3m)。推定(C)。
+- 北・東の土手は、彩色領域の延長が約260m。表の合計350mに約90m足りない(北虎口付近の途切れなど)。未彩色の部分は作っていない。
+- 未実装: 構内出入口、井戸屋形、火薬庫土塁の入口、大砲台・大砲、道路の舗装、カラタチの植栽、見張台(整備では復元しない)。

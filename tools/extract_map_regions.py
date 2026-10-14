@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """手彩色された地図写真から色分け領域を抽出し、多角形(ピクセル座標+仮のメートル座標)をJSONに書き出す。
 
-使い方: python3 tools/extract_map_regions.py <写真.jpg> <出力ディレクトリ> [--scale 0.40]
+使い方: python3 tools/extract_map_regions.py <写真.jpg> <出力ディレクトリ> [--scale 0.353]
 
 前提(いずれも仮): 写真は未補正(台形歪み・折り目あり)/ 地図は上が北 / 縮尺は --scale (m/px) で与える。
 色の意味は凡例が写っていないため推定: yellow=土塁, blue=堀・河川, green=北東側の土手, orange=番所, red=不明。
@@ -137,7 +137,7 @@ def rdp(pts, eps):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('photo'); ap.add_argument('outdir')
-    ap.add_argument('--scale', type=float, default=0.40, help='仮の縮尺 m/px')
+    ap.add_argument('--scale', type=float, default=0.353, help='縮尺 m/px(docs/scale-calibration.md)')
     ap.add_argument('--eps', type=float, default=3.0, help='多角形の簡略化許容誤差 px')
     ap.add_argument('--min-area', type=int, default=150)
     a = ap.parse_args()

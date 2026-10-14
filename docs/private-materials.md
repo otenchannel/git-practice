@@ -12,8 +12,8 @@
 ## 再生成手順
 写真を `data/raw/terrain/` に置いてから実行する(Pillow と numpy が必要)。
 ```
-python3 tools/extract_map_regions.py data/raw/terrain/20261014_hirakata_map_overlay.jpg data/private/geo --scale 0.40
-python3 tools/build_provisional_mesh.py data/private/geo/regions.json data/private/geo/object-map.json data/private/geo/mesh --scale 0.40
+python3 tools/extract_map_regions.py data/raw/terrain/20261014_hirakata_map_overlay.jpg data/private/geo --scale 0.353
+python3 tools/build_provisional_mesh.py data/private/geo/regions.json data/private/geo/object-map.json data/private/geo/mesh --scale 0.353
 ```
 出力: `kuzuha_provisional.obj/.mtl`(暫定メッシュ)、`object-ledger.csv`(部材ごとの根拠区分)、`preview_topdown.png`、`mesh-stats.json`。
 
@@ -23,9 +23,7 @@ python3 tools/build_provisional_mesh.py data/private/geo/regions.json data/priva
 3. 材質は根拠区分で色分け済み: 橙=位置は推定(C)・断面は整備案の値(B)、灰青=断面が未確認(U)、赤紫=視覚補完(D)。
 
 ## 精度と限界(重要)
-- 写真は未補正(台形歪み・折り目あり)。**縮尺は仮値0.40 m/px(±10%)**。次の独立した5つの推定の平均:
-  番所の短辺0.38、長辺0.45、見切塁の面積0.42、南大堀の面積0.37、土塁面積0.37。
-  **確定には原本の縮尺表記が必要(Q15)。**
+- 写真は未補正(台形歪み・折り目あり)。**縮尺は0.353 m/px(±3%)**。現存する地物(京阪線路・東西道路)の距離を地理院地図で測って決めた。詳細と限界は `docs/scale-calibration.md`。
 - 領域は手彩色の範囲を機械的に抽出したもので、測量線ではない。位置の根拠区分はC止まり。
 - 赤の線は凡例がなく意味不明のため、モデルには使っていない。
 - 土塁・堀の断面は台形ではなく、領域に高さ・深さを与えて3×3平滑化を2回かけた仮の斜面。

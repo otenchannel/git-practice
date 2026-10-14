@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """色分け領域(regions.json)と部材定義(object-map.json)から、暫定の3DメッシュをOBJ+MTLで書き出す。
 
-使い方: python3 tools/build_provisional_mesh.py <regions.json> <object-map.json> <出力ディレクトリ> [--scale 0.40] [--cell 1.0] [--no-flip-x]
+使い方: python3 tools/build_provisional_mesh.py <regions.json> <object-map.json> <出力ディレクトリ> [--scale 0.353] [--cell 1.0] [--no-flip-x]
 
 - 座標: 東=+X, 北=+Z, 上=+Y(メートル)。原点=番所の重心。OBJはUnity取り込み時にXが反転するため、既定で X=-東 として出力する
   (Unityで 東=+X になる)。鏡像になっていたら --no-flip-x で作り直す。
 - 土塁は +高さ、堀は -深さ の高さ場を作り、3x3平滑化で斜面を付ける(断面の根拠はなく、形はあくまで仮)。
 - MTL は根拠区分で色分け: C橙(位置は推定/断面はB), U灰青(断面が未確認), D赤紫(視覚補完)。
-- 縮尺 --scale は仮値(m/px)。縮尺が確定したら更新して再実行する。
+- 縮尺 --scale は docs/scale-calibration.md の値(0.353 m/px, ±3%)。
 依存: Pillow, numpy
 """
 import argparse, csv, json, os
@@ -36,7 +36,7 @@ def blur(h, n):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('regions'); ap.add_argument('objmap'); ap.add_argument('outdir')
-    ap.add_argument('--scale', type=float, default=0.40); ap.add_argument('--cell', type=float, default=1.0)
+    ap.add_argument('--scale', type=float, default=0.353); ap.add_argument('--cell', type=float, default=1.0)
     ap.add_argument('--no-flip-x', action='store_true'); ap.add_argument('--smooth', type=int, default=2)
     a = ap.parse_args()
     reg = json.load(open(a.regions, encoding='utf-8')); cfg = json.load(open(a.objmap, encoding='utf-8'))

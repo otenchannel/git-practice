@@ -10,6 +10,8 @@
 - 建物(番所・火薬庫・箱番所)・井戸屋形・大砲台(スロープ付き)・虎口の石積み・冠木門・木柵は、箱と切妻屋根などの単純な立体。
 - MTL は根拠区分で色分け: C橙(位置は推定/断面はB), U灰青(断面が未確認), D赤紫(視覚補完)。
 - 縮尺 --scale は docs/scale-calibration.md の値(0.353 m/px, ±3%)。
+- 標高: --dem/--dem-meta/--origin を指定すると、国土地理院DEMを平滑化した地面を土台にし、Y=0 を --datum-m(東京湾平均海面基準の標高, 既定5.0m=淀川の水際)に置く。
+  DEMは川底を測れないため、Y=0は「川底」ではなく水際の標高(docs/elevation-datum.md)。
 依存: Pillow, numpy
 """
 import argparse, csv, json, math, os
@@ -49,9 +51,12 @@ def rect(c, u, v, hu, hv):
 class Solids:
     """凸な立体を集めて、外向き法線になるよう巻き順を整えてOBJに書き出す"""
 
-    def __init__(self, sx): self.items, self.sx = [], sx
+    def __init__(self, sx, base_fn=None): self.items, self.sx, self.base_fn = [], sx, base_fn
 
     def add(self, name, mat, verts, faces):
+        if self.base_fn:  # 立体の中心の地面の高さ(Y=0基準)だけ持ち上げる
+            dy = self.base_fn(np.mean([v[0] for v in verts]), np.mean([v[2] for v in verts]))
+            verts = [(v[0], v[1] + dy, v[2]) for v in verts]
         self.items.append((name, mat, verts, faces))
 
     def box(self, name, mat, c, bearing, length, width, y0, y1):
@@ -93,11 +98,42 @@ class Solids:
         return base
 
 
+def dem_base(a, xmin, ymax, nx, ny, cell):
+    """DEM(NaN=欠測)を格子に標高mで移し、欠測を周囲で埋め、ガウス平滑化して返す(Y=0基準へのずらしは呼び出し側)"""
+    D = np.load(a.dem); z, tx0, ty0 = map(int, open(a.dem_meta).read().split())
+    lat0, lon0 = map(float, a.origin.split(','))
+    n = 2 ** z
+    E = xmin + np.arange(nx) * cell; N = ymax - np.arange(ny) * cell
+    lat = lat0 + N[:, None] / 111132.0; lon = lon0 + E[None, :] / (111320.0 * math.cos(math.radians(lat0)))
+    u = (lon + 180) / 360 * n; v = (1 - np.arcsinh(np.tan(np.radians(lat))) / math.pi) / 2 * n
+    px = (u - tx0) * 256 - 0.5; py = (v - ty0) * 256 - 0.5
+    # 必要な範囲だけ切り出して欠測を周囲の平均で埋める(川の水面は縁の標高が内側へ広がる)
+    x0, x1 = int(px.min()) - 4, int(px.max()) + 6; y0, y1 = int(py.min()) - 4, int(py.max()) + 6
+    W = D[max(y0, 0):y1, max(x0, 0):x1].copy(); ox, oy = max(x0, 0), max(y0, 0)
+    for _ in range(300):
+        nanm = np.isnan(W)
+        if not nanm.any(): break
+        p = np.pad(W, 1, constant_values=np.nan)
+        stack = np.stack([p[1 + dy:1 + dy + W.shape[0], 1 + dx:1 + dx + W.shape[1]] for dy in (-1, 0, 1) for dx in (-1, 0, 1)])
+        cnt = np.sum(~np.isnan(stack), axis=0); sm = np.nansum(stack, axis=0)
+        fill = nanm & (cnt > 0); W[fill] = sm[fill] / cnt[fill]
+    fx = np.clip(px - ox, 0, W.shape[1] - 1.001); fy = np.clip(py - oy, 0, W.shape[0] - 1.001)
+    i, j = fx.astype(int), fy.astype(int); aa, bb = fx - i, fy - j
+    G = W[j, i] * (1 - aa) * (1 - bb) + W[j, i + 1] * aa * (1 - bb) + W[j + 1, i] * (1 - aa) * bb + W[j + 1, i + 1] * aa * bb
+    sig = a.dem_sigma_m / cell; r = int(3 * sig) + 1; k = np.exp(-0.5 * (np.arange(-r, r + 1) / sig) ** 2); k /= k.sum()
+    Gp = np.pad(G, r, mode='edge')
+    Gp = np.apply_along_axis(lambda m: np.convolve(m, k, mode='same'), 1, Gp)
+    Gp = np.apply_along_axis(lambda m: np.convolve(m, k, mode='same'), 0, Gp)
+    return Gp[r:-r, r:-r]
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('regions'); ap.add_argument('objmap'); ap.add_argument('outdir')
     ap.add_argument('--scale', type=float, default=0.353); ap.add_argument('--cell', type=float, default=1.0)
     ap.add_argument('--no-flip-x', action='store_true'); ap.add_argument('--smooth', type=int, default=2)
+    ap.add_argument('--dem'); ap.add_argument('--dem-meta'); ap.add_argument('--origin', help='原点(番所)の緯度,経度')
+    ap.add_argument('--datum-m', type=float, default=5.0); ap.add_argument('--dem-sigma-m', type=float, default=12.0)
     a = ap.parse_args()
     reg = json.load(open(a.regions, encoding='utf-8')); cfg = json.load(open(a.objmap, encoding='utf-8'))
     ox, oy = reg['origin_px']; s = a.scale; cell = a.cell
@@ -114,6 +150,10 @@ def main():
     earth = np.zeros((ny, nx)); moat = np.zeros((ny, nx)); owner = np.full((ny, nx), -1, int)
     ledger = []
     ij = lambda e, n: ((e - xmin) / cell, (ymax - n) / cell)
+    B = np.zeros((ny, nx))
+    if a.dem:
+        B = dem_base(a, xmin, ymax, nx, ny, cell) - a.datum_m
+    base_at = lambda e, n: float(B[min(max(int((ymax - n) / cell), 0), ny - 1), min(max(int((e - xmin) / cell), 0), nx - 1)])
 
     def raster(poly_en):
         im = Image.new('L', (nx, ny), 0)
@@ -136,7 +176,7 @@ def main():
         cat[mm] = (4 if o['section_evidence'] == 'U' else 1) if o['kind'] == 'earthwork' else (3 if o['section_evidence'] == 'U' else 2)
 
     # --- 虎口(通路を切る)と土橋(堀を残した帯)。平滑化の後で床を0mに戻す ---
-    solids = Solids(1.0 if a.no_flip_x else -1.0)
+    solids = Solids(1.0 if a.no_flip_x else -1.0, base_at if a.dem else None)
     gates = {g['id']: g for g in cfg.get('gates', [])}
     gate_c = {}
     for g in gates.values():
@@ -231,18 +271,21 @@ def main():
     with open(os.path.join(a.outdir, 'kuzuha_provisional.obj'), 'w') as f:
         f.write('# 楠葉台場 暫定メッシュ(縮尺・形状は仮。根拠区分で色分け)\nmtllib kuzuha_provisional.mtl\no site_terrain\ng site_terrain\n')
         for j in range(ny):
-            for i in range(nx): f.write(f'v {X[i]:.2f} {H[j, i]:.2f} {Z[j]:.2f}\n')
+            for i in range(nx): f.write(f'v {X[i]:.2f} {H[j, i] + B[j, i]:.2f} {Z[j]:.2f}\n')
         for n in names:
             if faces[n]:
                 f.write(f'usemtl {n}\n')
                 for t in faces[n]: f.write(f'f {t[0]} {t[1]} {t[2]}\n')
         solids.write(f, nx * ny)
+    for r_ in ledger:
+        r_['ground_tp_m'] = round(base_at(r_['centroid_east_m'], r_['centroid_north_m']) + a.datum_m, 1) if a.dem else ''
     with open(os.path.join(a.outdir, 'object-ledger.csv'), 'w', newline='', encoding='utf-8') as f:
         w = csv.DictWriter(f, fieldnames=list(ledger[0].keys())); w.writeheader(); w.writerows(ledger)
     ev = float(np.clip(H, 0, None).sum() * cell * cell); mv = float(np.clip(-H, 0, None).sum() * cell * cell)
     st = {'scale_m_per_px': s, 'cell_m': cell, 'grid': [nx, ny], 'extent_m': {'east': [xmin, xmax], 'north': [ymin, ymax]},
           'earth_volume_m3_heightfield': round(ev), 'moat_volume_m3_heightfield': round(mv), 'unmatched': [o['id'] for o, _ in missing],
-          'flip_x': sx < 0, 'solids': len(solids.items)}
+          'flip_x': sx < 0, 'solids': len(solids.items), 'datum_tp_m': a.datum_m if a.dem else None,
+          'base_y_range_m': [round(float(B.min()), 2), round(float(B.max()), 2)] if a.dem else None}
     json.dump(st, open(os.path.join(a.outdir, 'mesh-stats.json'), 'w'), ensure_ascii=False, indent=1)
     col = np.zeros((ny, nx, 3)); col[:] = (200, 198, 190)
     col[cat == 1] = (240, 165, 40); col[cat == 4] = (180, 180, 180); col[cat == 2] = (60, 140, 215); col[cat == 3] = (140, 158, 178); col[cat == 5] = (215, 110, 150)

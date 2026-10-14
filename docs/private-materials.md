@@ -15,6 +15,7 @@
 python3 tools/extract_map_regions.py data/raw/terrain/20261014_hirakata_map_overlay.jpg data/private/geo --scale 0.353
 python3 tools/build_provisional_mesh.py data/private/geo/regions.json data/private/geo/object-map.json data/private/geo/mesh --scale 0.353
 ```
+標高の基準(Y=0)と地面のDEMを付ける場合の手順は `docs/elevation-datum.md`。
 出力: `kuzuha_provisional.obj/.mtl`(暫定メッシュ)、`object-ledger.csv`(部材ごとの根拠区分)、`preview_topdown.png`、`mesh-stats.json`。
 斜めからの確認用: `python3 tools/preview_oblique.py data/private/geo/mesh/kuzuha_provisional.obj out.png <東m> <北m> <半径m> --flip-x --az 200`
 

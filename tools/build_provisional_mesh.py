@@ -344,7 +344,8 @@ def main():
             pr = [x for x in (5, 1, 4, 2, 3) if x in c4]  # 土橋>土塁>堀
             n = names[pr[0]] if pr else 'ground'
             a_, b_, c_, d_ = vid(i, j), vid(i + 1, j), vid(i, j + 1), vid(i + 1, j + 1)
-            faces[n] += [(a_, c_, b_), (b_, c_, d_)] if sx > 0 else [(a_, b_, c_), (b_, d_, c_)]
+            # 書き出し座標(右手系)の外積が上向きになる巻き順。立体・土台も同じ規約(外向き法線)で、Unity取り込み後に表になる
+            faces[n] += [(a_, b_, c_), (b_, d_, c_)] if sx > 0 else [(a_, c_, b_), (b_, c_, d_)]
     Ht = H + B
     ddE = np.gradient(Ht, cell, axis=1); ddN = -np.gradient(Ht, cell, axis=0)  # 行が増えると北が減る
     nrm = np.stack([-ddE, np.ones_like(Ht), -ddN], -1); nrm /= np.linalg.norm(nrm, axis=-1, keepdims=True)

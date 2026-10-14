@@ -19,9 +19,12 @@ python3 tools/build_provisional_mesh.py data/private/geo/regions.json data/priva
 斜めからの確認用: `python3 tools/preview_oblique.py data/private/geo/mesh/kuzuha_provisional.obj out.png <東m> <北m> <半径m> --flip-x --az 200`
 
 ## Unityへの取り込み
-1. `kuzuha_provisional.obj` と `.mtl` を `Assets/Private/`(gitignore対象にすること)へコピーする。
-2. 取り込み後、**東が+X、北が+Z** になっているか確認する(番所は原点付近、南東の稜堡が+X・−Z側)。鏡像になっていたら `--no-flip-x` を付けて再生成する。
-3. 材質は根拠区分で色分け済み: 橙=位置は推定(C)・断面は整備案の値(B)、灰青=断面が未確認(U)、赤紫=視覚補完(D)。
+1. Unityのプロジェクトに `Assets/Private/` フォルダを作る(**このフォルダは.gitignoreで除外済み**。名前を変えるとコミットされるので注意)。
+2. `kuzuha_provisional.obj` と `kuzuha_provisional.mtl` を同じ場所にドラッグして入れる(読み込みに十数秒かかる)。
+3. objを選び、Inspector の Model タブで Scale Factor=1、Mesh Compression=Off を確認して Apply。
+4. Materials タブ → Extract Materials で `Assets/Private/Materials/` に取り出す。URPではそのままだとピンクになるので、Window > Rendering > Render Pipeline Converter で Built-in to URP の Material Upgrade を実行する(または各マテリアルのシェーダーを Universal Render Pipeline/Lit にして Base Map の色を元の色に合わせる)。
+5. シーンに置き、**Scene ビューを上面(Top)にして向きを確認する**: 東が+X(右)、北が+Z(上)。番所が原点付近、火薬庫が右上(東へ約111m、北へ約20m)、南大堀が下側にあれば正しい。左右が逆なら鏡像なので `--no-flip-x` で作り直す。
+6. 寸法の確認: 番所の長辺が約15.8m。Hierarchy には site_terrain と、部材ごとの子オブジェクトが並ぶ。
 
 ## 精度と限界(重要)
 - 写真は未補正(台形歪み・折り目あり)。**縮尺は0.353 m/px(±3%)**。現存する地物(京阪線路・東西道路)の距離を地理院地図で測って決めた。詳細と限界は `docs/scale-calibration.md`。

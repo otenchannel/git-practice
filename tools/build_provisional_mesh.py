@@ -22,6 +22,45 @@ MATS = {'ground': (0.80, 0.78, 0.72), 'earth_C': (0.95, 0.65, 0.15), 'moat_C': (
         'earth_U': (0.70, 0.70, 0.70), 'bridge_D': (0.85, 0.45, 0.60), 'obj_D': (0.75, 0.30, 0.45)}
 
 
+NAT = {'nat_terrain': (0.40, 0.48, 0.27), 'nat_dirt': (0.52, 0.42, 0.30), 'nat_stone': (0.58, 0.58, 0.56),
+       'nat_wood': (0.38, 0.26, 0.17), 'nat_roof': (0.24, 0.24, 0.27), 'nat_plaster': (0.84, 0.81, 0.74)}
+
+
+def nat_mat(name, mat):
+    """立体の名前から自然色の材質を決める"""
+    n = name.lower()
+    if 'stone' in n: return 'nat_stone'
+    if any(k in n for k in ('post', 'beam', 'fence', 'frame', 'eave')): return 'nat_wood'
+    if 'roof' in n: return 'nat_roof'
+    if 'platform' in n or 'ramp' in n: return 'nat_dirt'
+    return 'nat_plaster'
+
+
+def edt2(mask):
+    """正確な二乗ユークリッド距離変換(Felzenszwalb法)。mask=True の各画素から、最も近い False 画素までの距離^2(画素単位)"""
+    INF = 1e20
+    f = np.where(mask, INF, 0.0)
+
+    def line(fv):
+        n = len(fv); v = np.zeros(n, int); z = np.zeros(n + 1); k = 0; z[0] = -INF; z[1] = INF; d = np.empty(n)
+        for q in range(1, n):
+            while True:
+                p = v[k]; sv = ((fv[q] + q * q) - (fv[p] + p * p)) / (2 * q - 2 * p)
+                if sv <= z[k] and k > 0: k -= 1
+                else: break
+            if sv <= z[k]: k = 0  # k==0 の先頭を置き換える
+            else: k += 1
+            v[k] = q; z[k] = -INF if k == 0 else sv; z[k + 1] = INF
+        k = 0
+        for q in range(n):
+            while z[k + 1] < q: k += 1
+            d[q] = (q - v[k]) ** 2 + fv[v[k]]
+        return d
+    for j in range(f.shape[1]): f[:, j] = line(f[:, j])
+    for i in range(f.shape[0]): f[i, :] = line(f[i, :])
+    return f
+
+
 def nearest(comps, color, c, tol=60):
     best, bd = None, 1e9
     for r in comps.get(color, []):
@@ -81,9 +120,9 @@ class Solids:
         verts += [(c[0] - u[0] * hu, y_ridge, c[1] - u[1] * hu), (c[0] + u[0] * hu, y_ridge, c[1] + u[1] * hu)]
         self.add(name, mat, verts, [(0, 1, 2, 3), (0, 1, 5, 4), (3, 2, 5, 4), (0, 3, 4), (1, 2, 5)])
 
-    def write(self, f, base):
+    def write(self, f, base, mat_fn=None):
         for name, mat, verts, faces in self.items:
-            f.write(f'o {name}\ng {name}\nusemtl {mat}\n')  # UnityのOBJ取り込みは g 行で部材を分ける
+            f.write(f'o {name}\ng {name}\nusemtl {mat_fn(name, mat) if mat_fn else mat}\n')  # UnityのOBJ取り込みは g 行で部材を分ける
             for e, y, n in verts: f.write(f'v {self.sx * e:.2f} {y:.2f} {n:.2f}\n')
             ctr = np.mean([(self.sx * e, y, n) for e, y, n in verts], axis=0)
             for fa in faces:
@@ -134,6 +173,7 @@ def main():
     ap.add_argument('--no-flip-x', action='store_true'); ap.add_argument('--smooth', type=int, default=2)
     ap.add_argument('--dem'); ap.add_argument('--dem-meta'); ap.add_argument('--origin', help='原点(番所)の緯度,経度')
     ap.add_argument('--datum-m', type=float, default=5.0); ap.add_argument('--dem-sigma-m', type=float, default=12.0)
+    ap.add_argument('--legacy-blur', action='store_true', help='距離場の台形断面ではなく、従来の3x3平滑化を使う'); ap.add_argument('--ss', type=int, default=2)
     a = ap.parse_args()
     reg = json.load(open(a.regions, encoding='utf-8')); cfg = json.load(open(a.objmap, encoding='utf-8'))
     ox, oy = reg['origin_px']; s = a.scale; cell = a.cell
@@ -160,16 +200,53 @@ def main():
         ImageDraw.Draw(im).polygon([ij(*p) for p in poly_en], fill=1)
         return np.array(im, bool)
 
+    def profile_field(poly, o):
+        """領域の内側への距離から、台形(法面付き)の高さ/深さを作る。足元=多角形の縁、頂部/底=縁から run だけ内側"""
+        f = cell / a.ss; pad = 7.0
+        e0, e1 = min(p[0] for p in poly) - pad, max(p[0] for p in poly) + pad; n0, n1 = min(p[1] for p in poly) - pad, max(p[1] for p in poly) + pad
+        wf, hf = int((e1 - e0) / f) + 1, int((n1 - n0) / f) + 1
+        im = Image.new('L', (wf, hf), 0); ImageDraw.Draw(im).polygon([((p[0] - e0) / f, (n1 - p[1]) / f) for p in poly], fill=1)
+        mk = np.array(im, bool)
+        d = np.sqrt(edt2(mk)) * f
+        if o.get('base_width_m') and mk.any():  # 手彩色は細めなので、整備案の底幅に合うよう外側へ広げる(最大4m)
+            ins = d[mk]; hw = float(np.median(ins[ins >= np.percentile(ins, 75)]))
+            delta = min(4.0, max(0.0, o['base_width_m'] / 2 - hw))
+            if delta > 0.05:
+                mk = mk | (np.sqrt(edt2(~mk)) * f <= delta); d = np.sqrt(edt2(mk)) * f
+        dmax = float(d.max())
+        out = np.zeros((ny, nx))
+        if dmax <= 0: return out
+        top = o['height_m'] if o['kind'] == 'earthwork' else o['depth_m']
+        run = 1.5 * top if o['kind'] == 'earthwork' else o.get('wall_run_m', 1.5 * top)  # 法面の水平長(勾配1:1.5)
+        run = max(min(run, 0.85 * dmax), 0.3)
+        t = np.clip(d / run, 0, 1); prof = top * t * t * (3 - 2 * t)
+        i0, i1 = max(int(math.ceil((e0 - xmin) / cell)), 0), min(int((e1 - xmin) / cell), nx - 1)
+        j0, j1 = max(int(math.ceil((ymax - n1) / cell)), 0), min(int((ymax - n0) / cell), ny - 1)
+        if i1 < i0 or j1 < j0: return out
+        fi = np.clip(np.rint((xmin + np.arange(i0, i1 + 1) * cell - e0) / f).astype(int), 0, wf - 1)
+        fj = np.clip(np.rint((n1 - (ymax - np.arange(j0, j1 + 1) * cell)) / f).astype(int), 0, hf - 1)
+        out[j0:j1 + 1, i0:i1 + 1] = prof[fj[:, None], fi[None, :]]
+        return out
+
     for k, (o, r) in enumerate(placed):
-        m = raster([tom(p) for p in r['polygon_px']])
-        if o['kind'] == 'earthwork': earth[m] = np.maximum(earth[m], o['height_m']); owner[m] = k
-        else: moat[m] = np.maximum(moat[m], o['depth_m']); owner[m & (owner < 0)] = k
+        poly = [tom(p) for p in r['polygon_px']]
+        m = raster(poly); pf = None
+        if a.legacy_blur:
+            if o['kind'] == 'earthwork': earth[m] = np.maximum(earth[m], o['height_m'])
+            else: moat[m] = np.maximum(moat[m], o['depth_m'])
+        else:
+            pf = profile_field(poly, o)
+            if o['kind'] == 'earthwork': earth = np.maximum(earth, pf)
+            else: moat = np.maximum(moat, pf)
+        mo = m if a.legacy_blur else (pf > 0.02)
+        if o['kind'] == 'earthwork': owner[mo] = k
+        else: owner[mo & (owner < 0)] = k
         ledger.append({'id': o['id'], 'name': o['name'], 'kind': o['kind'], 'spec_no': o.get('spec_no'), 'plan_evidence': o['plan_evidence'],
                        'section_evidence': o['section_evidence'], 'height_m': o.get('height_m', ''), 'depth_m': o.get('depth_m', ''),
                        'plan_area_m2': round(r['area_px'] * s * s, 1), 'centroid_east_m': round(tom(r['centroid_px'])[0], 1),
                        'centroid_north_m': round(tom(r['centroid_px'])[1], 1), 'note': o.get('note', '')})
-    raw = np.where(earth > 0, earth, -moat)
-    H = blur(raw, a.smooth)
+    raw = np.where(moat > 0.15, -moat, earth) if not a.legacy_blur else np.where(earth > 0, earth, -moat)
+    H = blur(raw, a.smooth) if a.legacy_blur else raw
     cat = np.zeros((ny, nx), int)  # 0 ground, 1 earth_C, 2 moat_C, 3 moat_U, 4 earth_U, 5 bridge_D
     for k, (o, r) in enumerate(placed):
         mm = owner == k
@@ -266,17 +343,28 @@ def main():
             n = names[pr[0]] if pr else 'ground'
             a_, b_, c_, d_ = vid(i, j), vid(i + 1, j), vid(i, j + 1), vid(i + 1, j + 1)
             faces[n] += [(a_, c_, b_), (b_, c_, d_)] if sx > 0 else [(a_, b_, c_), (b_, d_, c_)]
-    with open(os.path.join(a.outdir, 'kuzuha_provisional.mtl'), 'w') as f:
-        for n, col in MATS.items(): f.write(f'newmtl {n}\nKd {col[0]} {col[1]} {col[2]}\n')
-    with open(os.path.join(a.outdir, 'kuzuha_provisional.obj'), 'w') as f:
-        f.write('# 楠葉台場 暫定メッシュ(縮尺・形状は仮。根拠区分で色分け)\nmtllib kuzuha_provisional.mtl\no site_terrain\ng site_terrain\n')
-        for j in range(ny):
-            for i in range(nx): f.write(f'v {X[i]:.2f} {H[j, i] + B[j, i]:.2f} {Z[j]:.2f}\n')
+    Ht = H + B
+    ddE = np.gradient(Ht, cell, axis=1); ddN = -np.gradient(Ht, cell, axis=0)  # 行が増えると北が減る
+    nrm = np.stack([-ddE, np.ones_like(Ht), -ddN], -1); nrm /= np.linalg.norm(nrm, axis=-1, keepdims=True)
+
+    def emit(prefix, comment, mats, terrain_mat, solid_mat_fn):
+        with open(os.path.join(a.outdir, prefix + '.mtl'), 'w') as f:
+            for n, col in mats.items(): f.write(f'newmtl {n}\nKd {col[0]} {col[1]} {col[2]}\n')
+        grouped = {}
         for n in names:
-            if faces[n]:
-                f.write(f'usemtl {n}\n')
-                for t in faces[n]: f.write(f'f {t[0]} {t[1]} {t[2]}\n')
-        solids.write(f, nx * ny)
+            if faces[n]: grouped.setdefault(terrain_mat(n), []).extend(faces[n])
+        with open(os.path.join(a.outdir, prefix + '.obj'), 'w') as f:
+            f.write(f'# 楠葉台場 暫定メッシュ({comment})\nmtllib {prefix}.mtl\no site_terrain\ng site_terrain\n')
+            for j in range(ny):
+                for i in range(nx): f.write(f'v {X[i]:.2f} {Ht[j, i]:.2f} {Z[j]:.2f}\n')
+            for j in range(ny):
+                for i in range(nx): f.write(f'vn {sx * nrm[j, i, 0]:.3f} {nrm[j, i, 1]:.3f} {nrm[j, i, 2]:.3f}\n')
+            for m_, tl in grouped.items():
+                f.write(f'usemtl {m_}\n')
+                for t in tl: f.write('f ' + ' '.join(f'{q}//{q}' for q in t) + '\n')
+            solids.write(f, nx * ny, solid_mat_fn)
+    emit('kuzuha_provisional', '縮尺・形状は仮。根拠区分で色分け', MATS, lambda n: n, None)
+    emit('kuzuha_natural', '縮尺・形状は仮。自然な色(根拠区分の色分けなし)', NAT, lambda n: 'nat_dirt' if n == 'bridge_D' else 'nat_terrain', nat_mat)
     for r_ in ledger:
         r_['ground_tp_m'] = round(base_at(r_['centroid_east_m'], r_['centroid_north_m']) + a.datum_m, 1) if a.dem else ''
     with open(os.path.join(a.outdir, 'object-ledger.csv'), 'w', newline='', encoding='utf-8') as f:

@@ -16,7 +16,10 @@ a = ap.parse_args()
 mtl = {}
 cur = None
 import os
-for l in open(os.path.join(os.path.dirname(a.obj), 'kuzuha_provisional.mtl')):
+mtl_file = 'kuzuha_provisional.mtl'
+for l in open(a.obj, encoding='utf-8'):
+    if l.startswith('mtllib'): mtl_file = l.split()[1]; break
+for l in open(os.path.join(os.path.dirname(a.obj), mtl_file)):
     t = l.split()
     if t and t[0] == 'newmtl': cur = t[1]
     elif t and t[0] == 'Kd': mtl[cur] = tuple(float(x) for x in t[1:4])

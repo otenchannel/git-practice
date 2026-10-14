@@ -7,7 +7,7 @@
   (Unityで 東=+X になる)。鏡像になっていたら --no-flip-x で作り直す。
 - 土塁は +高さ、堀は -深さ の高さ場を作り、3x3平滑化で斜面を付ける(断面の根拠はなく、形はあくまで仮)。
 - 虎口は土塁に幅4mの通路を切り(平滑化の後で床を0mに戻す)、土橋は堀を切らずに残した帯として表す。
-- 建物(番所・火薬庫・箱番所)・虎口の石積み・冠木門・木柵は、箱と切妻屋根の単純な立体。
+- 建物(番所・火薬庫・箱番所)・井戸屋形・大砲台(スロープ付き)・虎口の石積み・冠木門・木柵は、箱と切妻屋根などの単純な立体。
 - MTL は根拠区分で色分け: C橙(位置は推定/断面はB), U灰青(断面が未確認), D赤紫(視覚補完)。
 - 縮尺 --scale は docs/scale-calibration.md の値(0.353 m/px, ±3%)。
 依存: Pillow, numpy
@@ -59,6 +59,13 @@ class Solids:
         q = rect(c, u, v, length / 2, width / 2)
         verts = [(p[0], y0, p[1]) for p in q] + [(p[0], y1, p[1]) for p in q]
         self.add(name, mat, verts, [(0, 1, 2, 3), (4, 5, 6, 7), (0, 1, 5, 4), (1, 2, 6, 5), (2, 3, 7, 6), (3, 0, 4, 7)])
+
+    def wedge(self, name, mat, c, bearing, length, width, y_top):
+        """スロープ(楔)。中心c・軸bearing方向に length。軸の+側が高さ y_top、-側が地面(0)"""
+        u = unit(bearing); v = (u[1], -u[0])
+        q = rect(c, u, v, length / 2, width / 2)  # 0:(-u,-v) 1:(+u,-v) 2:(+u,+v) 3:(-u,+v)
+        verts = [(p[0], 0.0, p[1]) for p in q] + [(q[1][0], y_top, q[1][1]), (q[2][0], y_top, q[2][1])]
+        self.add(name, mat, verts, [(0, 1, 2, 3), (1, 2, 5, 4), (0, 3, 5, 4), (0, 1, 4), (3, 2, 5)])
 
     def gable(self, name, mat, c, bearing, length, width, y_eave, y_ridge, overhang, south_extra=0.0):
         """切妻屋根(棟は長軸方向)。south_extra: 南側の軒を余分に出す長さ(庇)"""
@@ -152,7 +159,7 @@ def main():
                 off = g['width_m'] / 2 + 0.6 + fl / 2
                 fc = (c[0] + sgn * v[0] * off, c[1] + sgn * v[1] * off)
                 solids.box(f"{g['id']}_fence{'L' if sgn < 0 else 'R'}", 'obj_D', fc, g['outward_bearing_deg'] + 90, fl, 0.12, 0.0, 1.8)
-        ledger.append({'id': g['id'], 'name': g['name'], 'kind': 'gate', 'spec_no': g['spec_no'], 'plan_evidence': g['plan_evidence'],
+        ledger.append({'id': g['id'], 'name': g['name'], 'kind': g.get('kind', 'gate'), 'spec_no': g['spec_no'], 'plan_evidence': g['plan_evidence'],
                        'section_evidence': g['section_evidence'], 'height_m': g['gate_h_m'], 'depth_m': '', 'plan_area_m2': round(g['width_m'] * g['through_m'], 1),
                        'centroid_east_m': round(c[0], 1), 'centroid_north_m': round(c[1], 1), 'note': g.get('note', '')})
     for b in cfg.get('bridges', []):
@@ -183,6 +190,28 @@ def main():
         ledger.append({'id': o['id'], 'name': o['name'], 'kind': 'building', 'spec_no': o.get('spec_no'), 'plan_evidence': o['plan_evidence'],
                        'section_evidence': o['section_evidence'], 'height_m': o['ridge_h_m'], 'depth_m': '', 'plan_area_m2': round(o['length_m'] * o['width_m'], 1),
                        'centroid_east_m': round(c[0], 1), 'centroid_north_m': round(c[1], 1), 'note': o.get('note', '')})
+
+    for w in cfg.get('wells', []):
+        c = tom(w['px']); gy = max(ground(*c), 0.0); h = w['house_m']
+        for sx_ in (-1, 1):
+            for sz_ in (-1, 1):
+                solids.box(f"{w['id']}_post{sx_}{sz_}", 'obj_D', (c[0] + sx_ * (h / 2 - 0.1), c[1] + sz_ * (h / 2 - 0.1)), 0, 0.15, 0.15, gy, gy + w['post_h_m'])
+        solids.gable(w['id'] + '_roof', 'obj_D', c, 90, h, h, gy + w['post_h_m'], gy + w['roof_h_m'], 0.25)
+        f_ = w['frame_m']
+        for k_, (off, brg, ln) in enumerate(((f_ / 2 - 0.05, 90, f_), (-(f_ / 2 - 0.05), 90, f_))):
+            solids.box(f"{w['id']}_frameNS{k_}", 'obj_D', (c[0], c[1] + off), brg, ln, 0.1, gy, gy + w['frame_h_m'])
+            solids.box(f"{w['id']}_frameEW{k_}", 'obj_D', (c[0] + off, c[1]), 0, ln, 0.1, gy, gy + w['frame_h_m'])
+        ledger.append({'id': w['id'], 'name': w['name'], 'kind': 'well', 'spec_no': w['spec_no'], 'plan_evidence': w['plan_evidence'],
+                       'section_evidence': w['section_evidence'], 'height_m': w['roof_h_m'], 'depth_m': '', 'plan_area_m2': round(h * h, 1),
+                       'centroid_east_m': round(c[0], 1), 'centroid_north_m': round(c[1], 1), 'note': w.get('note', '')})
+    for gp in cfg.get('gun_platforms', []):
+        c = tom(gp['px']); u = unit(gp['ramp_bearing_deg'])
+        solids.box(gp['id'] + '_platform', 'obj_D', c, gp['ramp_bearing_deg'], gp['size_m'], gp['size_m'], 0.0, gp['top_h_m'])
+        rc = (c[0] + u[0] * (gp['size_m'] / 2 + gp['ramp_len_m'] / 2), c[1] + u[1] * (gp['size_m'] / 2 + gp['ramp_len_m'] / 2))
+        solids.wedge(gp['id'] + '_ramp', 'obj_D', rc, gp['ramp_bearing_deg'] + 180, gp['ramp_len_m'], gp['ramp_w_m'], gp['top_h_m'])
+        ledger.append({'id': gp['id'], 'name': gp['name'], 'kind': 'gun_platform', 'spec_no': gp['spec_no'], 'plan_evidence': gp['plan_evidence'],
+                       'section_evidence': gp['section_evidence'], 'height_m': gp['top_h_m'], 'depth_m': '', 'plan_area_m2': round(gp['size_m'] ** 2 + gp['ramp_len_m'] * gp['ramp_w_m'], 1),
+                       'centroid_east_m': round(c[0], 1), 'centroid_north_m': round(c[1], 1), 'note': gp.get('note', '')})
 
     sx = solids.sx
     X = sx * (xmin + np.arange(nx) * cell); Z = ymax - np.arange(ny) * cell

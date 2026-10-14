@@ -7,3 +7,4 @@ unity/KuzuhaDaiba/Assets/StreamingAssets/private/
 # Unityに取り込む非公開の3Dデータ(フォルダと、そのmetaファイル)
 unity/KuzuhaDaiba/Assets/Private/
 unity/KuzuhaDaiba/Assets/Private.meta
+__pycache__/

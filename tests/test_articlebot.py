@@ -56,6 +56,59 @@ class RenderTest(unittest.TestCase):
         self.assertNotIn("秘密メモ", ab.render("<!-- 秘密メモ -->\n本文"))
 
 
+SAMPLE = """# Stripe「エラー」の直し方
+
+AI と一緒に作りました。執筆時点の情報です。リード文。
+
+## 30秒で分かる結論
+1. **原因**: これ
+2. 直し方
+
+## 直し方
+```
+x = 1
+```
+
+## 比較
+本文
+
+## よくある質問
+**Q. 試しましたか?**
+はい。
+"""
+
+
+class SiteTest(unittest.TestCase):
+    def test_structure(self):
+        page = ab.site_page("Stripe「エラー」の直し方", SAMPLE.split("\n", 1)[1])
+        self.assertIn('id="bar"', page)                       # 進捗バー
+        self.assertIn('class="sec tldr"', page)               # 結論カード
+        self.assertIn('class="toc"', page)                    # 目次(見出し3つ以上)
+        self.assertIn('<mark>エラー</mark>', page)             # タイトルの強調
+        self.assertIn('class="qa"', page)                     # FAQカード
+        self.assertIn("prefers-reduced-motion", page)         # 動きを減らす設定に対応
+
+    def test_title_and_content_are_escaped(self):
+        page = ab.site_page("<script>x</script>", "本文 <img src=x onerror=1>")
+        self.assertNotIn("<script>x", page)
+        self.assertNotIn("<img", page)
+
+    def test_export_site_requires_approval(self):
+        path = Path(tempfile.mkdtemp()) / "a.md"
+        path.write_text(SAMPLE, encoding="utf-8")
+        with self.assertRaises(SystemExit):
+            ab.export_site(path)
+        ab.approve(path, "me", reviewed=True)
+        self.assertIn("直し方", ab.export_site(path))
+        self.assertNotIn("検査結果", ab.export_site(path))  # 公開版に検査パネルは出さない
+
+    def test_preview_site_shows_check_panel(self):
+        self.assertIn("検査結果", ab.preview_site(SAMPLE + "\n【確認】未確認", ab.lint(SAMPLE + "\n【確認】未確認")))
+
+    def test_eyecatch_escapes(self):
+        self.assertNotIn("<b>x", ab.eyecatch_html("<b>x</b>", "<i>"))
+
+
 class ApprovalTest(unittest.TestCase):
     def setUp(self):
         self.path = Path(tempfile.mkdtemp()) / "a.md"

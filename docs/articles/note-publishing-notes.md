@@ -21,11 +21,16 @@
 - 先頭の公開メタ(タイトル案、スラッグ案など)と、末尾の告知文・公開前チェックを、本文から外した
 - 構成(結論 → 症状 → 原因 → 直し方 → FAQ)は、そのまま。目次は、見出しから自動で作られる
 
+## 見出し画像
+- `docs/articles/images/02-eyecatch.png`(1280x670)を、note の「見出し画像」に設定する
+- 新しい記事では、`python3 tools/articlebot/articlebot.py eyecatch <記事.md> --sub "説明"` で、HTML を作り、ブラウザでスクリーンショットを撮る
+- 画像に、秘密の値や個人情報が入っていないか、確認する(タイトルと説明文だけなので、通常は問題なし)
+
 ## note の入力欄との対応
 | 入力欄 | 入れるもの |
 |---|---|
 | タイトル | `Stripe「product tax code is missing」400の原因と対処【Managed Payments】`(長ければ、別案) |
-| 見出し画像 | エラーのログのスクリーンショット(**秘密の値を塗りつぶす**)か、図 |
+| 見出し画像 | `docs/articles/images/02-eyecatch.png` |
 | 本文 | `02-managed-payments-tax-code.note.md` の内容(先頭のコメント行は削除) |
 | ハッシュタグ | #Stripe #Python #決済 #Webhook など、3〜5個 |
 | 公開設定 | 最初は「無料」で公開 |

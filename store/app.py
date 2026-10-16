@@ -8,6 +8,7 @@ import hmac
 import html
 import json
 import os
+import re
 import secrets
 import smtplib
 import sqlite3
@@ -270,6 +271,12 @@ def make_handler(db_path, outbox):
             db = connect(db_path)
             if self.path == "/":
                 return self._send(200, (BASE / "static" / "index.html").read_bytes(), "text/html; charset=utf-8")
+            m = re.fullmatch(r"/articles/([a-z0-9-]{1,80})", self.path)
+            if m:  # 承認済みの記事ページ(tools/articlebot の export --site で生成して配置)
+                f = BASE / "static" / "articles" / f"{m.group(1)}.html"
+                if f.is_file():
+                    return self._send(200, f.read_bytes(), "text/html; charset=utf-8")
+                return self._json(404, {"error": "not found"})
             if self.path == "/legal":
                 return self._send(200, render_legal(), "text/html; charset=utf-8")
             if self.path == "/products":

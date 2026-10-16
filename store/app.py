@@ -32,6 +32,9 @@ SMTP_PASSWORD = os.environ.get("SMTP_PASSWORD", "")
 MAIL_FROM = os.environ.get("MAIL_FROM", SMTP_USER)
 ENABLE_MOCK_PAYMENT = os.environ.get("ENABLE_MOCK_PAYMENT") == "1"  # 開発専用。本番では絶対に有効にしない
 DB_PATH = os.environ.get("DB_PATH", str(BASE / "orders.db"))
+# 実験用(サンドボックス専用)。"off"=Managed Payments を無効化(既定・現行) / "default"=指定せずアカウント既定に従う
+STRIPE_MANAGED_PAYMENTS = os.environ.get("STRIPE_MANAGED_PAYMENTS", "off").strip().lower()
+STRIPE_TAX_CODE = os.environ.get("STRIPE_TAX_CODE", "").strip()  # 例: txcd_10000000。指定すると product_data[tax_code] を送る
 LEGAL_KEYS = ("LEGAL_SELLER", "LEGAL_REPRESENTATIVE", "LEGAL_DISCLOSURE", "LEGAL_EMAIL")
 STRIPE_TOLERANCE_SEC = 300
 LINK_TTL_SEC = int(os.environ.get("LINK_TTL_SEC", 24 * 3600))
@@ -65,6 +68,10 @@ def check_production_config():
             problems.append("SMTP_HOST が未設定(購入者にメールが届かない)")
         if ENABLE_MOCK_PAYMENT:
             problems.append("ENABLE_MOCK_PAYMENT が有効")
+        if STRIPE_SECRET_KEY.startswith("sk_live_") and (STRIPE_MANAGED_PAYMENTS != "off" or STRIPE_TAX_CODE):
+            problems.append("STRIPE_MANAGED_PAYMENTS / STRIPE_TAX_CODE は実験用(サンドボックス専用)。本番キーでは使えない")
+        if STRIPE_MANAGED_PAYMENTS not in ("off", "default"):
+            problems.append('STRIPE_MANAGED_PAYMENTS は "off" か "default"')
         if STRIPE_SECRET_KEY.startswith("sk_live_") and missing_legal():  # 実売上が発生する本番では表記必須
             problems.append("特商法表記が未設定: " + ", ".join(missing_legal()))
         if not PUBLIC_URL.startswith("https://"):
@@ -213,19 +220,23 @@ def handle_stripe_webhook(db, raw_body: bytes, header: str, base_url, outbox):
 
 def checkout_form(order_id, product, email):
     """Stripe Checkout Session 作成用のフォーム値。"""
-    return {
+    form = {
         "mode": "payment",
         "client_reference_id": order_id,
         "customer_email": email,
         "success_url": f"{PUBLIC_URL}/thanks",
         "cancel_url": f"{PUBLIC_URL}/",
-        # 自分が販売者として販売する前提(特商法表記と一致)。Managed Payments は商品の税コードが必須のため無効化
-        "managed_payments[enabled]": "false",
         "line_items[0][quantity]": "1",
         "line_items[0][price_data][currency]": "jpy",
         "line_items[0][price_data][unit_amount]": str(product["price_jpy"]),
         "line_items[0][price_data][product_data][name]": product["name"],
     }
+    if STRIPE_MANAGED_PAYMENTS == "off":
+        # 自分が販売者として販売する前提(特商法表記と一致)。Managed Payments は商品の税コードが必須のため無効化
+        form["managed_payments[enabled]"] = "false"
+    if STRIPE_TAX_CODE:
+        form["line_items[0][price_data][product_data][tax_code]"] = STRIPE_TAX_CODE
+    return form
 
 
 def create_checkout_session(order_id, product, email):
@@ -239,7 +250,7 @@ def create_checkout_session(order_id, product, email):
         with urllib.request.urlopen(req, timeout=15) as r:
             return json.loads(r.read())["url"]
     except urllib.error.HTTPError as e:  # Stripeのエラー本文(理由)をログに残す。鍵は含まれない
-        raise RuntimeError(f"Stripe {e.code}: {e.read()[:500].decode('utf-8', 'replace')}") from None
+        raise RuntimeError(f"Stripe {e.code}: {e.read()[:2000].decode('utf-8', 'replace')}") from None
 
 
 def make_handler(db_path, outbox):

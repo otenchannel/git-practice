@@ -132,13 +132,46 @@ class MailTest(unittest.TestCase):
 
 
 class CheckoutFormTest(unittest.TestCase):
-    def test_form_values(self):
-        product = app.load_products()["starter-guide"]
-        f = app.checkout_form("o1", product, "a@example.com")
+    def setUp(self):
+        self.orig = (app.STRIPE_MANAGED_PAYMENTS, app.STRIPE_TAX_CODE)
+        self.product = app.load_products()["starter-guide"]
+
+    def tearDown(self):
+        app.STRIPE_MANAGED_PAYMENTS, app.STRIPE_TAX_CODE = self.orig
+
+    def form(self):
+        return app.checkout_form("o1", self.product, "a@example.com")
+
+    def test_default_disables_managed_payments(self):
+        app.STRIPE_MANAGED_PAYMENTS, app.STRIPE_TAX_CODE = "off", ""
+        f = self.form()
         self.assertEqual(f["managed_payments[enabled]"], "false")
+        self.assertNotIn("line_items[0][price_data][product_data][tax_code]", f)
         self.assertEqual(f["client_reference_id"], "o1")
-        self.assertEqual(f["line_items[0][price_data][unit_amount]"], str(product["price_jpy"]))
+        self.assertEqual(f["line_items[0][price_data][unit_amount]"], str(self.product["price_jpy"]))
         self.assertEqual(f["line_items[0][price_data][currency]"], "jpy")
+
+    def test_experiment_modes(self):
+        app.STRIPE_MANAGED_PAYMENTS, app.STRIPE_TAX_CODE = "default", ""
+        self.assertNotIn("managed_payments[enabled]", self.form())
+        app.STRIPE_TAX_CODE = "txcd_10000000"
+        self.assertEqual(self.form()["line_items[0][price_data][product_data][tax_code]"], "txcd_10000000")
+
+    def test_experiment_blocked_with_live_key(self):
+        keys = ("STRIPE_SECRET_KEY", "STRIPE_WEBHOOK_SECRET", "DOWNLOAD_SECRET", "SMTP_HOST", "PUBLIC_URL")
+        orig = {k: getattr(app, k) for k in keys}
+        try:
+            app.STRIPE_SECRET_KEY, app.STRIPE_WEBHOOK_SECRET = "sk_live_x", b"whsec"
+            app.DOWNLOAD_SECRET, app.SMTP_HOST, app.PUBLIC_URL = b"long-random", "smtp.x", "https://x.com"
+            app.STRIPE_MANAGED_PAYMENTS, app.STRIPE_TAX_CODE = "default", ""
+            self.assertTrue(any("実験用" in p for p in app.check_production_config()))
+            app.STRIPE_MANAGED_PAYMENTS, app.STRIPE_TAX_CODE = "off", "txcd_10000000"
+            self.assertTrue(any("実験用" in p for p in app.check_production_config()))
+            app.STRIPE_SECRET_KEY = "sk_test_x"  # テストキーなら許可
+            self.assertFalse(any("実験用" in p for p in app.check_production_config()))
+        finally:
+            for k, v in orig.items():
+                setattr(app, k, v)
 
 
 class LegalTest(unittest.TestCase):

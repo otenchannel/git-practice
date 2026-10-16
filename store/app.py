@@ -5,6 +5,7 @@
 """
 import hashlib
 import hmac
+import html
 import json
 import os
 import secrets
@@ -31,9 +32,25 @@ SMTP_PASSWORD = os.environ.get("SMTP_PASSWORD", "")
 MAIL_FROM = os.environ.get("MAIL_FROM", SMTP_USER)
 ENABLE_MOCK_PAYMENT = os.environ.get("ENABLE_MOCK_PAYMENT") == "1"  # 開発専用。本番では絶対に有効にしない
 DB_PATH = os.environ.get("DB_PATH", str(BASE / "orders.db"))
+LEGAL_KEYS = ("LEGAL_SELLER", "LEGAL_REPRESENTATIVE", "LEGAL_DISCLOSURE", "LEGAL_EMAIL")
 STRIPE_TOLERANCE_SEC = 300
 LINK_TTL_SEC = int(os.environ.get("LINK_TTL_SEC", 24 * 3600))
 MAX_DOWNLOADS = int(os.environ.get("MAX_DOWNLOADS", 3))
+
+
+def missing_legal():
+    return [k for k in LEGAL_KEYS if not os.environ.get(k, "").strip()]
+
+
+def render_legal():
+    """特商法ページ。個人情報はコードに置かず、環境変数 LEGAL_* から差し込む。"""
+    page = (BASE / "static" / "legal.html").read_text(encoding="utf-8")
+    for k in LEGAL_KEYS:
+        v = os.environ.get(k, "").strip()
+        page = page.replace("{{" + k + "}}", html.escape(v) if v else "【未設定】")
+    banner = ("<p><strong>【管理者向け】未設定の項目があります。環境変数 "
+              + ", ".join(missing_legal()) + " を設定してください。</strong></p>") if missing_legal() else ""
+    return page.replace("<!--LEGAL_WARNING-->", banner).encode("utf-8")
 
 
 def check_production_config():
@@ -48,6 +65,8 @@ def check_production_config():
             problems.append("SMTP_HOST が未設定(購入者にメールが届かない)")
         if ENABLE_MOCK_PAYMENT:
             problems.append("ENABLE_MOCK_PAYMENT が有効")
+        if STRIPE_SECRET_KEY.startswith("sk_live_") and missing_legal():  # 実売上が発生する本番では表記必須
+            problems.append("特商法表記が未設定: " + ", ".join(missing_legal()))
         if not PUBLIC_URL.startswith("https://"):
             problems.append("PUBLIC_URL が https:// ではない")
     return problems
@@ -238,9 +257,10 @@ def make_handler(db_path, outbox):
 
         def do_GET(self):
             db = connect(db_path)
-            if self.path in ("/", "/legal"):
-                page = "index.html" if self.path == "/" else "legal.html"
-                return self._send(200, (BASE / "static" / page).read_bytes(), "text/html; charset=utf-8")
+            if self.path == "/":
+                return self._send(200, (BASE / "static" / "index.html").read_bytes(), "text/html; charset=utf-8")
+            if self.path == "/legal":
+                return self._send(200, render_legal(), "text/html; charset=utf-8")
             if self.path == "/products":
                 return self._json(200, list(load_products().values()))
             if self.path.startswith("/download/"):

@@ -47,7 +47,7 @@ Webhook は署名と時刻(5分以内)を検証し、支払済み・金額一致
 
 ## 販売ページ
 - `/` 商品一覧と購入フォーム(メールアドレス入力 → Stripe Checkout へ遷移)、`/legal` 特定商取引法に基づく表記
-- **公開前に `store/static/legal.html` の【】を実際の事業者情報に書き換えてください**(日本で販売する場合は表記が必須です)
+- 特商法表記は環境変数 `LEGAL_SELLER` / `LEGAL_REPRESENTATIVE` / `LEGAL_DISCLOSURE` / `LEGAL_EMAIL` から表示されます(日本で販売する場合は表記が必須。本番キー使用時は未設定だと起動しません)。公開〜本番化の手順は [docs/go-live.md](docs/go-live.md)
 - Stripe未設定の開発モードでは「決済が未設定です」と表示されます
 
 ## デプロイ

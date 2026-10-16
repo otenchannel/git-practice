@@ -141,6 +141,49 @@ class CheckoutFormTest(unittest.TestCase):
         self.assertEqual(f["line_items[0][price_data][currency]"], "jpy")
 
 
+class LegalTest(unittest.TestCase):
+    def setUp(self):
+        import os
+        self.os = os
+        self.orig = {k: os.environ.get(k) for k in app.LEGAL_KEYS}
+
+    def tearDown(self):
+        for k, v in self.orig.items():
+            if v is None:
+                self.os.environ.pop(k, None)
+            else:
+                self.os.environ[k] = v
+
+    def test_unset_shows_warning(self):
+        for k in app.LEGAL_KEYS:
+            self.os.environ.pop(k, None)
+        page = app.render_legal().decode()
+        self.assertIn("【未設定】", page)
+        self.assertIn("管理者向け", page)
+
+    def test_values_are_escaped_and_inserted(self):
+        vals = {"LEGAL_SELLER": "山田<b>商店</b>", "LEGAL_REPRESENTATIVE": "山田太郎",
+                "LEGAL_DISCLOSURE": "請求があれば遅滞なく開示します", "LEGAL_EMAIL": "a@example.com"}
+        self.os.environ.update(vals)
+        page = app.render_legal().decode()
+        self.assertIn("山田&lt;b&gt;商店&lt;/b&gt;", page)
+        self.assertNotIn("<b>商店", page)
+        self.assertNotIn("未設定", page)
+
+    def test_live_key_requires_legal(self):
+        orig = (app.STRIPE_SECRET_KEY, app.STRIPE_WEBHOOK_SECRET, app.DOWNLOAD_SECRET, app.SMTP_HOST, app.PUBLIC_URL)
+        for k in app.LEGAL_KEYS:
+            self.os.environ.pop(k, None)
+        try:
+            app.STRIPE_SECRET_KEY, app.STRIPE_WEBHOOK_SECRET = "sk_live_x", b"whsec"
+            app.DOWNLOAD_SECRET, app.SMTP_HOST, app.PUBLIC_URL = b"long-random", "smtp.x", "https://x.com"
+            self.assertTrue(any("特商法" in p for p in app.check_production_config()))
+            app.STRIPE_SECRET_KEY = "sk_test_x"  # テストキーなら要求しない
+            self.assertEqual(app.check_production_config(), [])
+        finally:
+            app.STRIPE_SECRET_KEY, app.STRIPE_WEBHOOK_SECRET, app.DOWNLOAD_SECRET, app.SMTP_HOST, app.PUBLIC_URL = orig
+
+
 class ConfigTest(unittest.TestCase):
     def test_production_guard(self):
         keys = ("SMTP_HOST", "STRIPE_SECRET_KEY", "STRIPE_WEBHOOK_SECRET", "DOWNLOAD_SECRET", "PUBLIC_URL", "ENABLE_MOCK_PAYMENT")
@@ -148,7 +191,7 @@ class ConfigTest(unittest.TestCase):
         try:
             app.STRIPE_SECRET_KEY = ""
             self.assertEqual(app.check_production_config(), [])  # 開発モードは常にOK
-            app.STRIPE_SECRET_KEY = "sk_live_x"
+            app.STRIPE_SECRET_KEY = "sk_test_x"
             app.STRIPE_WEBHOOK_SECRET = b""
             app.SMTP_HOST = ""
             app.PUBLIC_URL = "http://x"

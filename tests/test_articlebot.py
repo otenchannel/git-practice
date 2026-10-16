@@ -77,6 +77,23 @@ class ApprovalTest(unittest.TestCase):
         with self.assertRaises(SystemExit):
             ab.approve(self.path, "me", reviewed=True)
 
+    def test_export_html_requires_approval_and_has_copy_buttons(self):
+        self.path.write_text(CLEAN, encoding="utf-8")
+        with self.assertRaises(SystemExit):
+            ab.export_html(self.path)
+        ab.approve(self.path, "me", reviewed=True)
+        page = ab.export_html(self.path)
+        self.assertIn("タイトルをコピー", page)
+        self.assertIn("本文をコピー", page)
+        self.assertIn('<h2 id="t">タイトル</h2>', page)
+        self.assertNotIn("<h1>", page)           # タイトルは本文に重複させない
+        self.assertIn("公開は、ご自身で押す", page)
+
+    def test_export_html_escapes_title(self):
+        self.path.write_text("# <b>t</b>\n\nAI を使いました。執筆時点。\n", encoding="utf-8")
+        ab.approve(self.path, "me", reviewed=True)
+        self.assertNotIn("<b>t</b>", ab.export_html(self.path))
+
     def test_export_requires_approval(self):
         self.path.write_text(CLEAN, encoding="utf-8")
         with self.assertRaises(SystemExit):

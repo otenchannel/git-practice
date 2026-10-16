@@ -9,7 +9,7 @@
   python3 tools/articlebot/articlebot.py lint    docs/articles/xx.note.md
   python3 tools/articlebot/articlebot.py preview docs/articles/xx.note.md   # HTMLを生成して目視確認
   python3 tools/articlebot/articlebot.py approve docs/articles/xx.note.md --by 名前 --reviewed
-  python3 tools/articlebot/articlebot.py export  docs/articles/xx.note.md   # 承認済みのみ
+  python3 tools/articlebot/articlebot.py export  docs/articles/xx.note.md [--html --out paste.html]   # 承認済みのみ
 """
 import argparse
 import hashlib
@@ -154,6 +154,34 @@ def export(path):
     return re.sub(r"<!--.*?-->\n*", "", text, flags=re.S).strip() + "\n"
 
 
+def export_html(path):
+    """承認済みの本文を、noteの編集画面に貼りやすい形(タイトル欄・本文欄それぞれのコピーボタン付き)にする。
+    投稿そのものは人間が行う(承認が通らなければ、このページは作れない)。"""
+    body = export(path)
+    m = re.match(r"\s*#\s+(.*)\n", body)
+    title = m.group(1).strip() if m else ""
+    rest = body[m.end():] if m else body
+    return f"""<!doctype html><html lang="ja"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>note 貼り付け用</title><style>
+body{{font:16px/1.8 system-ui,"Hiragino Sans","Noto Sans JP",sans-serif;max-width:720px;margin:0 auto;padding:16px;color:#222}}
+.bar{{position:sticky;top:0;background:#e8f5e9;border:1px solid #8bc34a;border-radius:8px;padding:8px 16px;margin-bottom:24px}}
+button{{font:inherit;padding:8px 14px;margin:4px 8px 4px 0;border:0;border-radius:6px;background:#2f5d50;color:#fff;cursor:pointer}}
+pre{{background:#f4f4f2;padding:12px;overflow:auto;border-radius:6px}} code{{background:#f4f4f2;padding:0 4px;border-radius:4px}}
+blockquote{{margin:0;padding-left:12px;border-left:3px solid #ccc;color:#555}}
+</style>
+<div class="bar"><b>承認済み</b>(承認後に内容が変わると、このページは作れません)<br>
+<button onclick="copyEl('t')">タイトルをコピー</button><button onclick="copyEl('b')">本文をコピー</button>
+<span id="msg" role="status"></span><br>
+<small>手順: note の編集画面で、タイトル欄・本文欄に貼り付け → 見た目を確認 → <b>公開は、ご自身で押す</b></small></div>
+<h2 id="t">{html.escape(title)}</h2>
+<article id="b">{render(rest)}</article>
+<script>
+function copyEl(id){{const el=document.getElementById(id),r=document.createRange();r.selectNodeContents(el);
+const s=getSelection();s.removeAllRanges();s.addRange(r);const ok=document.execCommand('copy');s.removeAllRanges();
+document.getElementById('msg').textContent=ok?'コピーしました':'コピーできませんでした。手動で選択してコピーしてください';}}
+</script></html>"""
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("command", choices=["lint", "preview", "approve", "export"])
@@ -161,6 +189,7 @@ def main(argv=None):
     ap.add_argument("--by", help="approve: 承認者の名前")
     ap.add_argument("--reviewed", action="store_true", help="approve: 人間が全文を読み、事実を確認し、必要な修正をしたことの宣言")
     ap.add_argument("--out", help="preview/export: 出力先(省略時は <file>.preview.html / 標準出力)")
+    ap.add_argument("--html", action="store_true", help="export: note への貼り付け用ページ(コピーボタン付き)を出力")
     a = ap.parse_args(argv)
     text = Path(a.file).read_text(encoding="utf-8")
     if a.command == "lint":
@@ -178,7 +207,7 @@ def main(argv=None):
             raise SystemExit("--by に承認者の名前を指定してください。")
         print("承認を記録しました:", json.dumps(approve(a.file, a.by, a.reviewed), ensure_ascii=False))
     else:
-        body = export(a.file)
+        body = export_html(a.file) if a.html else export(a.file)
         if a.out:
             Path(a.out).write_text(body, encoding="utf-8")
             print(f"書き出しました: {a.out}")

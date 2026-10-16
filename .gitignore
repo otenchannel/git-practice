@@ -2,3 +2,4 @@ store/orders.db
 __pycache__/
 *.preview.html
 paste.html
+*.site.html

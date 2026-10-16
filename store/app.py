@@ -153,7 +153,8 @@ def fulfill_order(db, order_id, base_url, outbox, amount_jpy=None):
     try:
         send_mail(msg)
     except Exception as e:  # 失敗時は未送信のまま残し、Webhook再送で再試行させる
-        print(f"mail failed for order {row['id']}: {e}")
+        print(f"mail failed for order {row['id']} via {SMTP_HOST}:{SMTP_PORT} "
+              f"user_set={bool(SMTP_USER)} from={MAIL_FROM!r}: {type(e).__name__}: {e}")
         return False
     outbox.append(msg)
     db.execute("UPDATE orders SET emailed=1 WHERE id=?", (row["id"],))

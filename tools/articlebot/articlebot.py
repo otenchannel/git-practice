@@ -201,6 +201,7 @@ body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.9 system-ui,-app
 .hero h1 mark{background:linear-gradient(transparent 62%,rgba(47,213,180,.55) 62%);color:#fff;padding:0 .1em;background-size:0 100%;background-repeat:no-repeat;animation:mk .9s .3s forwards}
 @keyframes mk{to{background-size:100% 100%}}
 .wrap{max-width:760px;margin:0 auto;padding:0 20px 80px}
+.origin{margin:24px 0 0;padding:10px 16px;background:var(--card);border:1px solid var(--line);border-radius:10px;font-size:.9rem;color:var(--muted)}
 .toc{margin:28px 0 8px;padding:16px 20px;background:var(--card);border:1px solid var(--line);border-radius:12px}
 .toc b{font-size:.8rem;color:var(--muted);letter-spacing:.1em}.toc ol{margin:8px 0 0;padding-left:1.3em}
 .toc a,.sec a{color:var(--accent);text-decoration:none;background:linear-gradient(currentColor,currentColor) 0 100%/0 2px no-repeat;transition:background-size .3s}
@@ -250,7 +251,16 @@ def _title_markup(title):
     return re.sub(r"「([^」]+)」", r"「<mark>\1</mark>」", t, count=1)
 
 
-def site_page(title, body_md, panel=""):
+NOTE_URL_RE = re.compile(r"^https://note\.com/[A-Za-z0-9_\-/]+$")
+
+
+def check_note_url(url):
+    if not NOTE_URL_RE.match(url):
+        raise SystemExit("note の記事URL(https://note.com/<ユーザー名>/n/<記事ID> の形)を指定してください。")
+    return url
+
+
+def site_page(title, body_md, panel="", note_url="", canonical=False):
     body = render(body_md)
     parts = [p for p in re.split(r"(?=<h2>)", body) if p.strip()]
     lead, secs, toc = "", [], []
@@ -268,13 +278,16 @@ def site_page(title, body_md, panel=""):
             inner = _faq(inner)
         secs.append(f'<section class="{cls}">{inner}</section>')
     desc = re.sub(r"<[^>]+>", "", lead)[:110].strip()
+    origin = (f'<aside class="origin">この記事は <a href="{html.escape(note_url)}" rel="noopener">note</a> でも公開しています。'
+              f'</aside>') if note_url else ""
     toc_html = f'<nav class="toc"><b>目次</b><ol>{"".join(toc)}</ol></nav>' if len(toc) >= 3 else ""
     return f"""<!doctype html><html lang="ja"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>{html.escape(title)}</title><meta name="description" content="{html.escape(desc)}">
+{f'<link rel="canonical" href="{html.escape(note_url)}">' if note_url and canonical else ""}
 <style>{SITE_CSS}</style><div id="bar"></div>
 <div class="top">{html.escape(title)}</div>{panel}
 <header class="hero"><div class="in"><span class="pill">実録・つまずきメモ</span><h1>{_title_markup(title)}</h1></div></header>
-<main class="wrap">{toc_html}<div class="lead">{lead}</div>{"".join(secs)}</main>
+<main class="wrap">{origin}{toc_html}<div class="lead">{lead}</div>{"".join(secs)}</main>
 <script>{SITE_JS}</script></html>"""
 
 
@@ -292,10 +305,13 @@ def preview_site(text, issues):
     return site_page(title, rest, panel)
 
 
-def export_site(path):
-    """承認済みの本文を、自前サイト用の記事ページにする(承認が通らなければ作れない)。"""
+def export_site(path, note_url="", canonical=False):
+    """承認済みの本文を、自前サイト用の記事ページにする(承認が通らなければ作れない)。
+    note_url を渡すと、「noteでも公開しています」のリンクを入れる。canonical=True なら、検索エンジンに note 側を正とも伝える。"""
+    if canonical and not note_url:
+        raise SystemExit("--canonical には --note-url が必要です。")
     title, rest = _split_title(export(path))
-    return site_page(title, rest)
+    return site_page(title, rest, note_url=check_note_url(note_url) if note_url else "", canonical=canonical)
 
 
 def eyecatch_html(main, sub="", tag="実録", w=1280, h=670):
@@ -319,6 +335,8 @@ def main(argv=None):
     ap.add_argument("--reviewed", action="store_true", help="approve: 人間が全文を読み、事実を確認し、必要な修正をしたことの宣言")
     ap.add_argument("--out", help="preview/export: 出力先(省略時は <file>.preview.html / 標準出力)")
     ap.add_argument("--html", action="store_true", help="export: note への貼り付け用ページ(コピーボタン付き)を出力")
+    ap.add_argument("--note-url", default="", help="export --site: note の記事URL(ページに、noteへのリンクを入れる)")
+    ap.add_argument("--canonical", action="store_true", help="export --site: 検索エンジンに、note 側を正とする(重複対策)")
     ap.add_argument("--sub", default="", help="eyecatch: 画像の小さな説明文")
     ap.add_argument("--site", action="store_true", help="export/preview: 自前サイト用の、読みやすい記事ページを出力")
     a = ap.parse_args(argv)
@@ -344,7 +362,7 @@ def main(argv=None):
             raise SystemExit("--by に承認者の名前を指定してください。")
         print("承認を記録しました:", json.dumps(approve(a.file, a.by, a.reviewed), ensure_ascii=False))
     else:
-        body = export_site(a.file) if a.site else export_html(a.file) if a.html else export(a.file)
+        body = export_site(a.file, a.note_url, a.canonical) if a.site else export_html(a.file) if a.html else export(a.file)
         if a.out:
             Path(a.out).write_text(body, encoding="utf-8")
             print(f"書き出しました: {a.out}")

@@ -102,6 +102,29 @@ class SiteTest(unittest.TestCase):
         self.assertIn("直し方", ab.export_site(path))
         self.assertNotIn("検査結果", ab.export_site(path))  # 公開版に検査パネルは出さない
 
+    def test_note_link_and_canonical(self):
+        url = "https://note.com/someone/n/n1234abcd"
+        page = ab.site_page("t", "## a\n本文", note_url=url, canonical=True)
+        self.assertIn(f'href="{url}"', page)
+        self.assertIn("note</a> でも公開しています", page)
+        self.assertIn(f'<link rel="canonical" href="{url}">', page)
+        plain = ab.site_page("t", "## a\n本文", note_url=url)
+        self.assertNotIn("rel=\"canonical\"", plain)
+        self.assertNotIn("でも公開しています", ab.site_page("t", "## a\n本文"))
+
+    def test_note_url_is_validated(self):
+        self.assertEqual(ab.check_note_url("https://note.com/a_b/n/nabc123"), "https://note.com/a_b/n/nabc123")
+        for bad in ("http://note.com/a/n/x", "https://evil.example/a", "javascript:alert(1)", "https://note.com/a\"onmouseover=\"x"):
+            with self.assertRaises(SystemExit):
+                ab.check_note_url(bad)
+
+    def test_canonical_requires_note_url(self):
+        path = Path(tempfile.mkdtemp()) / "a.md"
+        path.write_text(SAMPLE, encoding="utf-8")
+        ab.approve(path, "me", reviewed=True)
+        with self.assertRaises(SystemExit):
+            ab.export_site(path, canonical=True)
+
     def test_preview_site_shows_check_panel(self):
         self.assertIn("検査結果", ab.preview_site(SAMPLE + "\n【確認】未確認", ab.lint(SAMPLE + "\n【確認】未確認")))
 

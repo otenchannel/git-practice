@@ -8,7 +8,7 @@
 使い方:
   python3 tools/articlebot/articlebot.py lint    docs/articles/xx.note.md
   python3 tools/articlebot/articlebot.py preview docs/articles/xx.note.md   # HTMLを生成して目視確認
-  python3 tools/articlebot/articlebot.py approve docs/articles/xx.note.md --by 名前
+  python3 tools/articlebot/articlebot.py approve docs/articles/xx.note.md --by 名前 --reviewed
   python3 tools/articlebot/articlebot.py export  docs/articles/xx.note.md   # 承認済みのみ
 """
 import argparse
@@ -47,7 +47,7 @@ def lint(text):
             issues.append({"rule": "unverified", "level": "error", "line": n, "msg": "未確認マーカー(【確認】)が残っている"})
     body = re.sub(r"<!--.*?-->", "", text, flags=re.S)
     if "AI" not in body:
-        issues.append({"rule": "ai-disclosure", "level": "warn", "line": 0, "msg": "AI を使って作ったことの記載が見当たらない"})
+        issues.append({"rule": "ai-disclosure", "level": "error", "line": 0, "msg": "AI を使って作ったことの記載が必要(投稿先の規約)"})
     if "執筆時点" not in body:
         issues.append({"rule": "as-of-date", "level": "warn", "line": 0, "msg": "「執筆時点」の注記が見当たらない"})
     return issues
@@ -125,12 +125,18 @@ def approval_path(path):
     return Path(str(path) + ".approval.json")
 
 
-def approve(path, by):
+ATTESTATION = "全文を読み、事実を確認し、必要な修正を自分で行った"
+
+
+def approve(path, by, reviewed=False):
+    """人間の確認の宣言(reviewed)が必須。機械は、読んだことを検証できないので、宣言を記録に残す。"""
+    if not reviewed:
+        raise SystemExit(f"承認には、人間の確認が必要です。「{ATTESTATION}」場合に限り、--reviewed を付けてください。")
     text = Path(path).read_text(encoding="utf-8")
     errs = errors(lint(text))
     if errs:
         raise SystemExit("承認できません:\n" + "\n".join(f"  行{e['line']}: {e['msg']}" for e in errs))
-    rec = {"sha256": sha256(text), "approved_by": by, "approved_at": time.strftime("%Y-%m-%dT%H:%M:%S%z")}
+    rec = {"sha256": sha256(text), "approved_by": by, "attestation": ATTESTATION, "approved_at": time.strftime("%Y-%m-%dT%H:%M:%S%z")}
     approval_path(path).write_text(json.dumps(rec, ensure_ascii=False, indent=2), encoding="utf-8")
     return rec
 
@@ -153,6 +159,7 @@ def main(argv=None):
     ap.add_argument("command", choices=["lint", "preview", "approve", "export"])
     ap.add_argument("file")
     ap.add_argument("--by", help="approve: 承認者の名前")
+    ap.add_argument("--reviewed", action="store_true", help="approve: 人間が全文を読み、事実を確認し、必要な修正をしたことの宣言")
     ap.add_argument("--out", help="preview/export: 出力先(省略時は <file>.preview.html / 標準出力)")
     a = ap.parse_args(argv)
     text = Path(a.file).read_text(encoding="utf-8")
@@ -169,7 +176,7 @@ def main(argv=None):
     elif a.command == "approve":
         if not a.by:
             raise SystemExit("--by に承認者の名前を指定してください。")
-        print("承認を記録しました:", json.dumps(approve(a.file, a.by), ensure_ascii=False))
+        print("承認を記録しました:", json.dumps(approve(a.file, a.by, a.reviewed), ensure_ascii=False))
     else:
         body = export(a.file)
         if a.out:

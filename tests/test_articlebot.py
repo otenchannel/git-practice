@@ -63,7 +63,19 @@ class ApprovalTest(unittest.TestCase):
     def test_cannot_approve_with_errors(self):
         self.path.write_text(CLEAN + "【確認】未確認", encoding="utf-8")
         with self.assertRaises(SystemExit):
-            ab.approve(self.path, "me")
+            ab.approve(self.path, "me", reviewed=True)
+
+    def test_approve_requires_human_attestation(self):
+        self.path.write_text(CLEAN, encoding="utf-8")
+        with self.assertRaises(SystemExit):
+            ab.approve(self.path, "me")  # reviewed 宣言なし
+        rec = ab.approve(self.path, "me", reviewed=True)
+        self.assertIn("自分で行った", rec["attestation"])
+
+    def test_missing_ai_disclosure_blocks_approval(self):
+        self.path.write_text("# t\n\n執筆時点の情報です。\n", encoding="utf-8")
+        with self.assertRaises(SystemExit):
+            ab.approve(self.path, "me", reviewed=True)
 
     def test_export_requires_approval(self):
         self.path.write_text(CLEAN, encoding="utf-8")
@@ -72,7 +84,7 @@ class ApprovalTest(unittest.TestCase):
 
     def test_export_after_approval_and_blocked_after_edit(self):
         self.path.write_text("<!-- 内部メモ -->\n" + CLEAN, encoding="utf-8")
-        ab.approve(self.path, "me")
+        ab.approve(self.path, "me", reviewed=True)
         out = ab.export(self.path)
         self.assertNotIn("内部メモ", out)
         self.assertIn("タイトル", out)

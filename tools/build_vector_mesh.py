@@ -455,6 +455,12 @@ def build_mesh(a, cfg, comps, tom, earth, moat, passages, bridges, gates, s):
         r_['ground_tp_m'] = round(float(base_at(r_['centroid_east_m'], r_['centroid_north_m'])[0]) + a.datum_m, 1)
     with open(os.path.join(a.outdir, 'object-ledger.csv'), 'w', newline='', encoding='utf-8') as f:
         w = csv.DictWriter(f, fieldnames=list(ledger[0].keys())); w.writeheader(); w.writerows(ledger)
+    feats = []  # Unityでの位置→地物の検索用(東=+X, 北=+Z の平面座標。足元の外周)
+    for f in earth + moat:
+        for g_ in (f.foot.geoms if hasattr(f.foot, 'geoms') else [f.foot]):
+            if g_.is_empty or g_.geom_type != 'Polygon': continue
+            feats.append({'id': f.o['id'], 'kind': f.o['kind'], 'xz': [round(v, 2) for q in g_.exterior.coords for v in (q[0], q[1])]})
+    json.dump({'features': feats}, open(os.path.join(a.outdir, 'features.json'), 'w'), ensure_ascii=False)
     st = {'scale_m_per_px': s, 'vertices': int(len(Vt)), 'triangles': int(len(tris)), 'solids': len(solids.items), 'datum_tp_m': a.datum_m,
           'extent_m': {'east': [xmin, xmax], 'north': [ymin, ymax]}, 'flip_x': sx < 0, 'plan_adjust': cfg.get('plan_adjust'), 'plan_frame_axis_deg': (cfg.get('plan_frame') or {}).get('axis_deg')}
     json.dump(st, open(os.path.join(a.outdir, 'mesh-stats.json'), 'w'), ensure_ascii=False, indent=1)

@@ -91,6 +91,48 @@ def snap_polyline(ls, families_deg, tol_deg, max_move=3.0):
     return LineString([tuple(p) for p in out])
 
 
+def snap_ring(poly, families_deg, tol_deg, simplify=2.0, max_move=6.0):
+    """閉じた輪郭の各辺を基準の向きへ揃え、同じ向きで続く辺を1本の直線にまとめ、頂点を隣り合う直線の交点で作り直す"""
+    P = biggest(poly.buffer(0)).simplify(simplify)
+    c = [np.array(q, float) for q in P.exterior.coords][:-1]
+    n = len(c)
+    if n < 3: return P
+    E = []  # (家族番号or-1, 単位方向, 長さ, 通る点)
+    for i in range(n):
+        a_, b_ = c[i], c[(i + 1) % n]; d = b_ - a_; L_ = np.linalg.norm(d)
+        if L_ < 1e-9: continue
+        br = math.degrees(math.atan2(d[0], d[1])) % 180
+        dist = [min(abs(br - f % 180), 180 - abs(br - f % 180)) for f in families_deg]
+        k = int(np.argmin(dist))
+        if dist[k] <= tol_deg:
+            u = np.array([math.sin(math.radians(families_deg[k])), math.cos(math.radians(families_deg[k]))])
+        else: k, u = -1, d / L_
+        if np.dot(u, d) < 0: u = -u
+        E.append([k, u, L_, (a_ + b_) / 2])
+    # 同じ家族で隣り合う辺をまとめる(長さ加重の通る点)
+    merged = []
+    for e in E:
+        if merged and e[0] != -1 and merged[-1][0] == e[0]:
+            m = merged[-1]; w0, w1 = m[2], e[2]
+            m[3] = (m[3] * w0 + e[3] * w1) / (w0 + w1); m[2] = w0 + w1
+        else: merged.append(list(e))
+    if len(merged) > 1 and merged[0][0] != -1 and merged[0][0] == merged[-1][0]:
+        m0, m1 = merged[0], merged.pop(); m0[3] = (m0[3] * m0[2] + m1[3] * m1[2]) / (m0[2] + m1[2]); m0[2] += m1[2]
+    if len(merged) < 3: return P
+    proj = lambda p, ln: ln[3] + ln[1] * np.dot(p - ln[3], ln[1])
+    pts = []
+    for i in range(len(merged)):
+        l0, l1 = merged[i - 1], merged[i]
+        A = np.array([[l0[1][0], -l1[1][0]], [l0[1][1], -l1[1][1]]])
+        if abs(np.linalg.det(A)) > 0.1:
+            t = np.linalg.solve(A, l1[3] - l0[3]); q = l0[3] + l0[1] * t[0]
+        else: q = (proj(l0[3], l1) + l1[3]) / 2
+        pts.append(q)
+    Q = Polygon([tuple(q) for q in pts]).buffer(0)
+    Q = biggest(Q) if not Q.is_empty else P
+    return Q if 0.7 < Q.area / P.area < 1.4 else P
+
+
 class Feature:
     def __init__(self, o, foot, crest, level):
         self.o, self.foot, self.crest, self.level = o, foot, crest, level  # level: 土塁なら+高さ、堀なら+深さ(正の値)
@@ -119,6 +161,10 @@ def build_features(cfg, comps, tom):
                 ctr = P.centroid; base = affinity.rotate(box(-Lm / 2, -Wm / 2, Lm / 2, Wm / 2), ang, origin=(0, 0))
                 foot = affinity.translate(base, ctr.x, ctr.y)
                 crest = affinity.translate(affinity.rotate(box(-max(Lm / 2 - run, .3), -max(Wm / 2 - run, .3), max(Lm / 2 - run, .3), max(Wm / 2 - run, .3)), ang, origin=(0, 0)), ctr.x, ctr.y)
+            elif mode == 'ring':
+                foot = snap_ring(Polygon(poly).buffer(o.get('widen_m', 0), join_style='mitre'), fam, o.get('snap_tol_deg', fr['snap_tol_deg']), o.get('simplify_m', 2.0))
+                crest = foot.buffer(-run, join_style='mitre')
+                if crest.is_empty: crest = foot.centroid.buffer(0.3)
             else:  # 'poly'
                 foot = biggest(Polygon(poly).buffer(0)).simplify(1.0).buffer(o.get('widen_m', 0), join_style='mitre')
                 crest = foot.buffer(-run, join_style='mitre')
@@ -129,6 +175,9 @@ def build_features(cfg, comps, tom):
             bwid = max(tw - 2 * run, 0.6)
             if mode == 'strip':
                 sp, _ = spine_of(poly, simplify=2.0); sp = snap(sp); foot = sp.buffer(tw / 2, **BUF); crest = sp.buffer(bwid / 2, **BUF)
+            elif mode == 'ring':
+                foot = snap_ring(Polygon(poly), fam, o.get('snap_tol_deg', fr['snap_tol_deg']), o.get('simplify_m', 2.0)); crest = foot.buffer(-min(run, 3.0), join_style='mitre')
+                if crest.is_empty: crest = foot.centroid.buffer(0.3)
             else:
                 foot = biggest(Polygon(poly).buffer(0)).simplify(1.5); crest = foot.buffer(-min(run, 3.0), join_style='mitre')
                 if crest.is_empty: crest = foot.centroid.buffer(0.3)

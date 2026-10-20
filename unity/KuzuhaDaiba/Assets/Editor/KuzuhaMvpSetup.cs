@@ -24,6 +24,7 @@ public static class KuzuhaMvpSetup
         var sw = Get<ModelSwitcher>(mvp); sw.evidenceModel = ev; sw.naturalModel = nat;
         var col = Get<ModelColliders>(mvp); col.models = new[] { ev, nat };
         var info = Get<InfoPanel>(mvp); info.switcher = sw;
+        sw.Set(sw.startWithEvidence);  // 編集中も片方だけ表示(重なった面のちらつきを防ぐ)
 
         var origin = FindRoot("XR Origin");
         if (origin != null)

@@ -1,20 +1,25 @@
 using System.Text;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.UI;
+using UnityEngine.XR;
+using XRUsages = UnityEngine.XR.CommonUsages;
 
-// 視線(頭の正面)で見ている物の解説を、視界に固定したパネルに表示する。
-//  - 建物・門・土橋・井戸など: オブジェクト名から台帳(object-ledger.csv)を引く
-//  - 土塁・堀: 地形メッシュ上の当たり位置から features.json の足元ポリゴンで判定する
-// 根拠レベルは色+文字(A/B/C/D/U)で併記する。
+// 説明の表示: 見たいところを「クリック」したときだけ出す(普段は何も出さない)。
+//  PC   : 画面上の知りたい場所を左クリック。何もない所をクリックするか Esc キーで閉じる。
+//  VR   : 右コントローラで指して、右トリガーを押す。何もない所を指して押すと閉じる。
+//  土塁・堀は地形メッシュ上のクリック位置から、建物・門などはオブジェクト名から台帳を引く。
+// 画面には内部の記号・番号を出さない。根拠は日本語の言葉だけで表示する。
 public class InfoPanel : MonoBehaviour
 {
     public Transform head;
-    public ModelSwitcher switcher;     // 現在どちらのモデルかを表示するため(任意)
-    public float maxDistance = 120f;
+    public ModelSwitcher switcher;
+    public float maxDistance = 150f;
     public float panelDistance = 1.6f;
-    public Vector2 panelSize = new Vector2(0.9f, 0.55f);
+    public Vector2 panelSize = new Vector2(0.95f, 0.5f);
 
-    Text text; Image bar; Transform panel; string lastId;
+    Text text; Image bar; Transform panel; LineRenderer laser;
+    bool prevTrigger;
 
     void Start()
     {
@@ -24,24 +29,24 @@ public class InfoPanel : MonoBehaviour
 
     void Build()
     {
-        var go = new GameObject("InfoPanel"); panel = go.transform; panel.SetParent(head, false);
-        panel.localPosition = new Vector3(0f, -0.28f, panelDistance); panel.localScale = Vector3.one * 0.001f;
+        var go = new GameObject("InfoPanel"); go.transform.SetParent(head, false);
         var cv = go.AddComponent<Canvas>(); cv.renderMode = RenderMode.WorldSpace;
         panel = go.transform;  // Canvas追加で Transform が RectTransform に置き換わるため取り直す
-        var rt = go.GetComponent<RectTransform>(); rt.sizeDelta = panelSize * 1000f;
-        var bg = new GameObject("bg").AddComponent<Image>(); bg.transform.SetParent(panel, false); bg.color = new Color(0, 0, 0, 0.65f);
+        panel.localPosition = new Vector3(0f, -0.26f, panelDistance); panel.localScale = Vector3.one * 0.001f;
+        go.GetComponent<RectTransform>().sizeDelta = panelSize * 1000f;
+        var bg = new GameObject("bg").AddComponent<Image>(); bg.transform.SetParent(panel, false); bg.color = new Color(0, 0, 0, 0.72f);
         var brt = bg.rectTransform; brt.anchorMin = Vector2.zero; brt.anchorMax = Vector2.one; brt.offsetMin = brt.offsetMax = Vector2.zero;
         bar = new GameObject("bar").AddComponent<Image>(); bar.transform.SetParent(panel, false);
         var rr = bar.rectTransform; rr.anchorMin = new Vector2(0, 0); rr.anchorMax = new Vector2(0, 1); rr.pivot = new Vector2(0, 0.5f); rr.sizeDelta = new Vector2(14, 0); rr.anchoredPosition = Vector2.zero;
         var t = new GameObject("text"); t.transform.SetParent(panel, false);
-        text = t.AddComponent<Text>(); text.font = JapaneseFont(); text.fontSize = 34; text.color = Color.white; text.horizontalOverflow = HorizontalWrapMode.Wrap; text.verticalOverflow = VerticalWrapMode.Truncate;
+        text = t.AddComponent<Text>(); text.font = JapaneseFont(); text.fontSize = 34; text.color = Color.white; text.supportRichText = true;
+        text.horizontalOverflow = HorizontalWrapMode.Wrap; text.verticalOverflow = VerticalWrapMode.Truncate;
         var trt = text.rectTransform; trt.anchorMin = Vector2.zero; trt.anchorMax = Vector2.one; trt.offsetMin = new Vector2(32, 12); trt.offsetMax = new Vector2(-16, -12);
         panel.gameObject.SetActive(false);
     }
 
     static Font JapaneseFont()
     {
-        // PC: Yu Gothic / Meiryo。Quest(Android): Noto Sans CJK 系。見つからなければ既定フォント(日本語が出ない場合は TMP の日本語フォントに差し替える)
         var f = Font.CreateDynamicFontFromOSFont(new[] { "Yu Gothic UI", "Meiryo", "Noto Sans CJK JP", "Noto Sans JP", "Droid Sans Fallback", "Arial" }, 34);
         return f != null ? f : Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
     }
@@ -49,17 +54,51 @@ public class InfoPanel : MonoBehaviour
     void Update()
     {
         if (head == null || ObjectLedger.Instance == null) return;
-        ObjectLedger.Row row = null; Vector3 hitPoint = default;
-        if (Physics.Raycast(head.position, head.forward, out var hit, maxDistance, ~0, QueryTriggerInteraction.Ignore))
+        var k = Keyboard.current;
+        if (k != null && k.escapeKey.wasPressedThisFrame) Hide();
+
+        // PC: 左クリック(右クリックは見回し用)
+        var m = Mouse.current;
+        if (m != null && m.leftButton.wasPressedThisFrame && !XRSettings.isDeviceActive && Camera.main != null)
+            Pick(Camera.main.ScreenPointToRay(m.position.ReadValue()));
+
+        // VR: 右コントローラの先にレーザーを出し、トリガーで選ぶ
+        var dev = InputDevices.GetDeviceAtXRNode(XRNode.RightHand);
+        if (XRSettings.isDeviceActive && dev.isValid && dev.TryGetFeatureValue(XRUsages.devicePosition, out var pos) && dev.TryGetFeatureValue(XRUsages.deviceRotation, out var rot))
         {
-            hitPoint = hit.point;
-            row = ObjectLedger.Instance.FindByObjectName(hit.collider.name);
-            if (row == null) row = ObjectLedger.Instance.FindByPosition(hit.point);
+            var space = head.parent != null ? head.parent : head;  // Camera Offset(トラッキング空間)
+            var ray = new Ray(space.TransformPoint(pos), space.rotation * rot * Vector3.forward);
+            DrawLaser(ray);
+            bool trig = dev.TryGetFeatureValue(XRUsages.triggerButton, out var tv) && tv;
+            if (trig && !prevTrigger) Pick(ray);
+            prevTrigger = trig;
         }
-        if (row == null) { if (panel.gameObject.activeSelf) panel.gameObject.SetActive(false); lastId = null; return; }
-        if (row.Id != lastId) { lastId = row.Id; Show(row); }
-        if (!panel.gameObject.activeSelf) panel.gameObject.SetActive(true);
+        else if (laser != null) laser.enabled = false;
     }
+
+    void DrawLaser(Ray ray)
+    {
+        if (laser == null)
+        {
+            laser = new GameObject("Laser").AddComponent<LineRenderer>(); laser.transform.SetParent(transform, false);
+            laser.positionCount = 2; laser.widthMultiplier = 0.004f; laser.material = new Material(Shader.Find("Sprites/Default")); laser.startColor = laser.endColor = new Color(1, 1, 1, 0.6f);
+        }
+        laser.enabled = true;
+        laser.SetPosition(0, ray.origin);
+        laser.SetPosition(1, Physics.Raycast(ray, out var h, maxDistance, ~0, QueryTriggerInteraction.Ignore) ? h.point : ray.origin + ray.direction * 5f);
+    }
+
+    void Pick(Ray ray)
+    {
+        ObjectLedger.Row row = null;
+        if (Physics.Raycast(ray, out var hit, maxDistance, ~0, QueryTriggerInteraction.Ignore))
+        {
+            row = ObjectLedger.Instance.FindByObjectName(hit.collider.name) ?? ObjectLedger.Instance.FindByPosition(hit.point);
+        }
+        if (row == null) Hide(); else Show(row);
+    }
+
+    void Hide() { if (panel != null) panel.gameObject.SetActive(false); }
 
     static EvidenceLevel Parse(string s) => (s ?? "").Trim().ToUpperInvariant() switch
     { "A" => EvidenceLevel.A, "B" => EvidenceLevel.B, "C" => EvidenceLevel.C, "D" => EvidenceLevel.D, _ => EvidenceLevel.U };
@@ -70,13 +109,14 @@ public class InfoPanel : MonoBehaviour
         bar.color = EvidenceColors.Of(plan);
         var sb = new StringBuilder();
         sb.AppendLine($"<b>{r.Name}</b>");
-        sb.AppendLine($"位置・平面: {r.PlanEvidence}({EvidenceColors.Label(plan)})   断面・高さ: {r.SectionEvidence}({EvidenceColors.Label(sec)})");
+        var desc = ObjectDescriptions.Of(r.Id);
+        if (!string.IsNullOrEmpty(desc)) sb.AppendLine(desc);
         var dims = new StringBuilder();
-        if (!string.IsNullOrEmpty(r.Height)) dims.Append($"高さ {r.Height} m  ");
-        if (!string.IsNullOrEmpty(r.Depth)) dims.Append($"深さ {r.Depth} m  ");
-        if (!string.IsNullOrEmpty(r.GroundTp)) dims.Append($"地盤 T.P.{r.GroundTp} m");
+        if (!string.IsNullOrEmpty(r.Height)) dims.Append($"高さ 約{r.Height} m   ");
+        if (!string.IsNullOrEmpty(r.Depth)) dims.Append($"深さ 約{r.Depth} m   ");
         if (dims.Length > 0) sb.AppendLine(dims.ToString());
-        if (!string.IsNullOrEmpty(r.Note)) sb.AppendLine(r.Note);
-        text.supportRichText = true; text.text = sb.ToString();
+        sb.AppendLine($"<size=28>位置・形の根拠: {EvidenceColors.Label(plan)}   高さ・断面の根拠: {EvidenceColors.Label(sec)}</size>");
+        text.text = sb.ToString();
+        panel.gameObject.SetActive(true);
     }
 }

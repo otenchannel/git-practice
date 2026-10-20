@@ -216,7 +216,7 @@ def main():
     pas_u = unary_union(list(passages.values())) if passages else None
     for f in earth:  # 通路を切る(切り口は法面になる)
         if pas_u is not None and f.foot.intersects(pas_u):
-            f.foot = f.foot.difference(pas_u); f.crest = f.crest.difference(pas_u.buffer(max(f.level * 1.0, 1.0), join_style='mitre'))
+            f.foot = f.foot.difference(pas_u); f.crest = f.crest.difference(pas_u.buffer(0.6, join_style='mitre'))  # 切り口はほぼ垂直(石積みの厚さ0.6mに合わせる)
     bank_u = unary_union([f.foot for f in earth])
     br_u = unary_union([p for _, p in bridges]) if bridges else None
     for f in moat:  # 堀は土塁の足元を超えない/土橋は切り残す

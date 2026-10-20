@@ -27,6 +27,7 @@ public class InfoPanel : MonoBehaviour
         var go = new GameObject("InfoPanel"); panel = go.transform; panel.SetParent(head, false);
         panel.localPosition = new Vector3(0f, -0.28f, panelDistance); panel.localScale = Vector3.one * 0.001f;
         var cv = go.AddComponent<Canvas>(); cv.renderMode = RenderMode.WorldSpace;
+        panel = go.transform;  // Canvas追加で Transform が RectTransform に置き換わるため取り直す
         var rt = go.GetComponent<RectTransform>(); rt.sizeDelta = panelSize * 1000f;
         var bg = new GameObject("bg").AddComponent<Image>(); bg.transform.SetParent(panel, false); bg.color = new Color(0, 0, 0, 0.65f);
         var brt = bg.rectTransform; brt.anchorMin = Vector2.zero; brt.anchorMax = Vector2.one; brt.offsetMin = brt.offsetMax = Vector2.zero;

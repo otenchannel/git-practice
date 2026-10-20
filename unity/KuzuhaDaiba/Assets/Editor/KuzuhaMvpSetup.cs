@@ -44,7 +44,9 @@ public static class KuzuhaMvpSetup
 
     static GameObject Find(string prefix)
     {
-        foreach (var go in Object.FindObjectsByType<Transform>(FindObjectsSortMode.None)) if (go.parent == null && go.name.StartsWith(prefix)) return go.gameObject;
+        // 非表示のオブジェクトも探す(片方のモデルは非表示にしているため)。重複していたら最初の1つを使う
+        foreach (var go in Object.FindObjectsByType<Transform>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+            if (go.parent == null && go.name.StartsWith(prefix)) return go.gameObject;
         return null;
     }
 

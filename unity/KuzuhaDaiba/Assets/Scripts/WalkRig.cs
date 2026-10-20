@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.XR;
+using XRUsages = UnityEngine.XR.CommonUsages;
 
 // 現地スケールで歩く。XR Origin に付ける。
 //  VR: 左スティックで移動(頭の向き基準)、右スティック左右でスナップ回転
@@ -39,9 +40,9 @@ public class WalkRig : MonoBehaviour
             if (k.leftShiftKey.isPressed) speed = runSpeed;
         }
         var left = InputDevices.GetDeviceAtXRNode(XRNode.LeftHand);
-        if (left.isValid && left.TryGetFeatureValue(CommonUsages.primary2DAxis, out var a) && a.sqrMagnitude > 0.04f) move += a;
+        if (left.isValid && left.TryGetFeatureValue(XRUsages.primary2DAxis, out var a) && a.sqrMagnitude > 0.04f) move += a;
         var right = InputDevices.GetDeviceAtXRNode(XRNode.RightHand);
-        if (right.isValid && right.TryGetFeatureValue(CommonUsages.primary2DAxis, out var r)) turn = r.x;
+        if (right.isValid && right.TryGetFeatureValue(XRUsages.primary2DAxis, out var r)) turn = r.x;
 
         if (!vr)
         {

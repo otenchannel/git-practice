@@ -8,3 +8,20 @@ unity/KuzuhaDaiba/Assets/StreamingAssets/private/
 unity/KuzuhaDaiba/Assets/Private/
 unity/KuzuhaDaiba/Assets/Private.meta
 __pycache__/
+
+# 市資料から起こした派生データ(Unityの解説表示用)。公開しない
+unity/KuzuhaDaiba/Assets/StreamingAssets/object-ledger.csv*
+unity/KuzuhaDaiba/Assets/StreamingAssets/features.json*
+
+# Unity の生成物
+unity/KuzuhaDaiba/Library/
+unity/KuzuhaDaiba/Temp/
+unity/KuzuhaDaiba/Logs/
+unity/KuzuhaDaiba/UserSettings/
+unity/KuzuhaDaiba/obj/
+unity/KuzuhaDaiba/Builds/
+unity/KuzuhaDaiba/*.csproj
+unity/KuzuhaDaiba/*.sln
+unity/KuzuhaDaiba/*.slnx
+unity/KuzuhaDaiba/Assets/_Recovery/
+unity/KuzuhaDaiba/Assets/_Recovery.meta

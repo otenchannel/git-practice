@@ -42,6 +42,17 @@ public static class KuzuhaMvpSetup
         Debug.Log("Kuzuha: MVP を配置しました。再生して Tab(VRは右Aボタン)で色分け⇔自然色を切り替えられます");
     }
 
+    // 編集中(再生しないとき)に表示を切り替える
+    [MenuItem("Kuzuha/Toggle Model (編集中の表示切替)")]
+    static void Toggle()
+    {
+        var sw = Object.FindFirstObjectByType<ModelSwitcher>();
+        if (sw == null) { Debug.LogWarning("Kuzuha: ModelSwitcher がありません。Setup MVP を実行してください"); return; }
+        sw.Set(!sw.EvidenceOn);
+        if (sw.evidenceModel) EditorUtility.SetDirty(sw.evidenceModel);
+        if (sw.naturalModel) EditorUtility.SetDirty(sw.naturalModel);
+    }
+
     static GameObject Find(string prefix)
     {
         // 非表示のオブジェクトも探す(片方のモデルは非表示にしているため)。重複していたら最初の1つを使う

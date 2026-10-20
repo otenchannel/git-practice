@@ -31,7 +31,10 @@ public class ModelSwitcher : MonoBehaviour
     public void Set(bool evidence)
     {
         evidenceOn = evidence;
+        if (evidenceModel == null || naturalModel == null) Debug.LogWarning("ModelSwitcher: evidenceModel / naturalModel が未設定です。Kuzuha > Setup MVP を実行してください");
+        else if (evidenceModel == naturalModel) Debug.LogWarning("ModelSwitcher: 2つのモデルが同じオブジェクトを指しています。KuzuhaMVP の Inspector で割り当てを確認してください");
         if (evidenceModel) evidenceModel.SetActive(evidence);
-        if (naturalModel) naturalModel.SetActive(!evidence);
+        if (naturalModel && naturalModel != evidenceModel) naturalModel.SetActive(!evidence);
+        Debug.Log($"ModelSwitcher: {(evidence ? "根拠色分け版" : "自然色版")}を表示");
     }
 }

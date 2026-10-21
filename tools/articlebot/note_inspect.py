@@ -9,6 +9,7 @@
 使い方:
   py tools/articlebot/note_inspect.py login     # 開いたブラウザで note にログイン → ターミナルで Enter
   py tools/articlebot/note_inspect.py inspect   # 編集画面が開く → 画面が表示されたら Enter → 構造を表示
+  py tools/articlebot/note_inspect.py diagnose  # 編集画面が読み込み中のまま進まないときの原因調査(失敗した通信・エラーを表示)
 """
 import json
 import sys
@@ -83,6 +84,44 @@ def wait_and_collect(pages, want=3, timeout=30):
         time.sleep(1)
 
 
+def _short(url):
+    """URL から、クエリ(個人情報や認証情報が入りうる部分)を除く。"""
+    return url.split("?")[0].split("#")[0][:120]
+
+
+def diagnose(ctx, page, seconds=25):
+    """編集画面を開き、一定時間の間に起きた失敗(通信・エラー)と、ブラウザの状態を表示する。内容(本文・Cookie・クエリ)は出さない。"""
+    events = []
+    page.on("console", lambda m: events.append(("console." + m.type, m.text[:140])) if m.type in ("error", "warning") else None)
+    page.on("pageerror", lambda e: events.append(("pageerror", str(e)[:140])))
+    page.on("requestfailed", lambda r: events.append(("通信失敗", f"{_short(r.url)} ({r.failure})")))
+    page.on("response", lambda r: events.append((f"HTTP {r.status}", _short(r.url))) if r.status >= 400 else None)
+    page.goto(EDITOR_URL, wait_until="commit")
+    print(f"{seconds}秒間、様子を見ます…(ブラウザの窓は閉じないでください)")
+    time.sleep(seconds)
+    info = {}
+    try:
+        info = page.evaluate("() => ({state: document.readyState, nodes: document.querySelectorAll('*').length, textLen: (document.body ? document.body.innerText.length : 0), webdriver: navigator.webdriver, ua: navigator.userAgent})")
+    except Exception as e:
+        info = {"error": type(e).__name__}
+    print("\n===== ここから =====")
+    print("URL:", _short(page.url))
+    print("ブラウザの状態:", json.dumps(info, ensure_ascii=False))
+    seen = set()
+    print("--- 失敗・エラー(重複は省略) ---")
+    for kind, detail in events:
+        if (kind, detail) in seen:
+            continue
+        seen.add((kind, detail))
+        print(f"{kind}: {detail}")
+        if len(seen) >= 40:
+            print("(40件で打ち切り)")
+            break
+    if not seen:
+        print("(失敗・エラーは記録されませんでした)")
+    print("===== ここまで =====")
+
+
 def _context(p):
     PROFILE.mkdir(parents=True, exist_ok=True)
     return p.chromium.launch_persistent_context(str(PROFILE), headless=False, viewport={"width": 1280, "height": 900})
@@ -90,7 +129,7 @@ def _context(p):
 
 def main(argv=None):
     argv = argv or sys.argv[1:]
-    if not argv or argv[0] not in ("login", "inspect"):
+    if not argv or argv[0] not in ("login", "inspect", "diagnose"):
         raise SystemExit(__doc__)
     try:
         from playwright.sync_api import sync_playwright
@@ -103,6 +142,8 @@ def main(argv=None):
             page.goto("https://note.com/login")
             input("開いたブラウザで note にログインしてください(パスワードは、そこに入力します)。\nログインできたら、ここで Enter を押してください: ")
             print("ログイン状態を、プロフィールに保存しました。")
+        elif argv[0] == "diagnose":
+            diagnose(ctx, page)
         else:
             page.goto(EDITOR_URL)
             print(f"現在のURL: {page.url}")

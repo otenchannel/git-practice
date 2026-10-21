@@ -87,13 +87,32 @@ def main(argv=None):
             if "login" in page.url:
                 ctx.close()
                 raise SystemExit("ログイン画面に移りました。先に `login` を実行してください。")
-            input("編集画面が表示されたら、ここで Enter を押してください(記事は書かなくて構いません): ")
-            elements = page.evaluate(DUMP_JS)
+            input("編集画面が表示されたら、ここで Enter を押してください(記事は書かなくて構いません。ブラウザの窓は、閉じないでください): ")
+            # 編集画面が新しいタブで開き直されることがあるので、Enter の時点で開いているタブから、編集画面を探す
+            pages = [pg for pg in ctx.pages if not pg.is_closed()]
+            if not pages:
+                raise SystemExit("ブラウザの窓が、すでに閉じられていました。窓を閉じずに、編集画面が表示された状態で Enter を押してください。")
+            print("開いているタブ:")
+            for pg in pages:
+                print("  -", pg.url)
+            targets = [pg for pg in pages if "editor.note.com" in pg.url] or pages
+            elements = []
+            for pg in targets:
+                try:
+                    pg.wait_for_load_state("domcontentloaded", timeout=10000)
+                    elements += pg.evaluate(DUMP_JS)
+                except Exception as e:  # 閉じた・遷移中など。理由を表示して、次のタブへ
+                    print(f"(このタブは調べられませんでした: {type(e).__name__})")
+            if not elements:
+                raise SystemExit("入力欄やボタンを取得できませんでした。編集画面が完全に表示されてから、もう一度 inspect を実行してください。")
             print("\n===== ここから =====")
             print(format_elements(elements))
             print("===== ここまで =====")
             print(f"\n(要素 {len(elements)} 件。個人情報や記事の内容が含まれていないか確認してから、貼り付けてください)")
-        ctx.close()
+        try:
+            ctx.close()
+        except Exception:
+            pass  # 窓が、すでに閉じられていても問題ない
 
 
 if __name__ == "__main__":

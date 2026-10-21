@@ -12,6 +12,7 @@
 """
 import json
 import sys
+import time
 from pathlib import Path
 
 PROFILE = Path.home() / ".articlebot" / "note-profile"
@@ -61,6 +62,27 @@ def format_elements(elements):
     return "\n".join(lines)
 
 
+def wait_and_collect(pages, want=3, timeout=30):
+    """画面の入力欄・ボタンが want 個以上出るまで、1秒おきに調べ直す。時間切れの場合は、その時点の結果を返す。"""
+    deadline = time.time() + timeout
+    shown = False
+    while True:
+        elements = []
+        for pg in pages:
+            if pg.is_closed():
+                continue
+            try:
+                elements += pg.evaluate(DUMP_JS)
+            except Exception as e:  # 遷移中など。次の周回で、再試行する
+                last = type(e).__name__
+        if len(elements) >= want or time.time() > deadline:
+            return elements
+        if not shown:
+            print("編集画面の表示を待っています(最大30秒)…")
+            shown = True
+        time.sleep(1)
+
+
 def _context(p):
     PROFILE.mkdir(parents=True, exist_ok=True)
     return p.chromium.launch_persistent_context(str(PROFILE), headless=False, viewport={"width": 1280, "height": 900})
@@ -94,17 +116,18 @@ def main(argv=None):
                 raise SystemExit("ブラウザの窓が、すでに閉じられていました。窓を閉じずに、編集画面が表示された状態で Enter を押してください。")
             print("開いているタブ:")
             for pg in pages:
-                print("  -", pg.url)
+                print("  -", pg.url.split("?")[0])
             targets = [pg for pg in pages if "editor.note.com" in pg.url] or pages
-            elements = []
-            for pg in targets:
-                try:
-                    pg.wait_for_load_state("domcontentloaded", timeout=10000)
-                    elements += pg.evaluate(DUMP_JS)
-                except Exception as e:  # 閉じた・遷移中など。理由を表示して、次のタブへ
-                    print(f"(このタブは調べられませんでした: {type(e).__name__})")
+            # 編集画面は読み込みに時間がかかることがあるので、入力欄などが出てくるまで、最大 30 秒待つ
+            elements = wait_and_collect(targets)
             if not elements:
-                raise SystemExit("入力欄やボタンを取得できませんでした。編集画面が完全に表示されてから、もう一度 inspect を実行してください。")
+                for pg in pages:  # 診断: 内容は出さず、状態だけを示す
+                    try:
+                        info = pg.evaluate("() => ({state: document.readyState, nodes: document.querySelectorAll('*').length, textLen: (document.body ? document.body.innerText.length : 0)})")
+                        print(f"  診断: {pg.url.split('?')[0]} state={info['state']} nodes={info['nodes']} textLen={info['textLen']}")
+                    except Exception as e:
+                        print(f"  診断: {pg.url.split('?')[0]} 取得できません({type(e).__name__})")
+                raise SystemExit("入力欄やボタンを取得できませんでした。ブラウザの窓に、編集画面(タイトル欄・本文欄)が表示されているか確認して、もう一度 inspect を実行してください。")
             print("\n===== ここから =====")
             print(format_elements(elements))
             print("===== ここまで =====")

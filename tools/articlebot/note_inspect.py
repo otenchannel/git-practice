@@ -17,7 +17,8 @@ import time
 from pathlib import Path
 
 PROFILE = Path.home() / ".articlebot" / "note-profile"
-EDITOR_URL = "https://editor.note.com/new"
+# note 自身が /new を /notes/new に読み替えることを確認済み。編集画面の本体(editor.note.com 側)へは、ここから自動で移ることが多い
+EDITOR_URL = "https://note.com/notes/new"
 
 # ページ内で実行する。入力欄・ボタンなどの構造だけを集める(値・リンク先・Cookie は集めない)
 DUMP_JS = r"""
@@ -146,7 +147,7 @@ def main(argv=None):
             diagnose(ctx, page)
         else:
             page.goto(EDITOR_URL)
-            print(f"現在のURL: {page.url}")
+            print(f"現在のURL: {_short(page.url)}")
             if "login" in page.url:
                 ctx.close()
                 raise SystemExit("ログイン画面に移りました。先に `login` を実行してください。")

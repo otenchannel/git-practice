@@ -204,7 +204,7 @@ body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.9 system-ui,-app
 .origin{margin:24px 0 0;padding:10px 16px;background:var(--card);border:1px solid var(--line);border-radius:10px;font-size:.9rem;color:var(--muted)}
 .toc{margin:28px 0 8px;padding:16px 20px;background:var(--card);border:1px solid var(--line);border-radius:12px}
 .toc b{font-size:.8rem;color:var(--muted);letter-spacing:.1em}.toc ol{margin:8px 0 0;padding-left:1.3em}
-.toc a,.sec a{color:var(--accent);text-decoration:none;background:linear-gradient(currentColor,currentColor) 0 100%/0 2px no-repeat;transition:background-size .3s}
+.toc a,.sec a,.origin a{color:var(--accent);text-decoration:none;background:linear-gradient(currentColor,currentColor) 0 100%/0 2px no-repeat;transition:background-size .3s}
 .toc a:hover,.sec a:hover{background-size:100% 2px}
 .lead{font-size:1.05rem;color:var(--ink)}
 .sec{margin:44px 0;opacity:0;transform:translateY(14px);transition:opacity .6s,transform .6s}.sec.in{opacity:1;transform:none}

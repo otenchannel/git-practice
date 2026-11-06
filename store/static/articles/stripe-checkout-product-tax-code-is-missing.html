@@ -1,0 +1,179 @@
+<!doctype html><html lang="ja"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Stripe「product tax code is missing」400の原因と対処【Managed Payments】</title><meta name="description" content="Stripe の Checkout Session を API で作ったら、いきなり 400 エラー。
+
+Invalid line_items[0]: the product tax code is missing.">
+<link rel="canonical" href="https://note.com/livelybbbbb/n/n7cf908d5f667">
+<style>
+:root{--bg:#fafaf7;--ink:#1d1d1b;--muted:#6b6b66;--card:#fff;--line:#e4e4de;--accent:#2f5d50;--accent2:#1fa88a;--mark:#ffe066;--code:#14161b;--codefg:#e6e6e0}
+@media (prefers-color-scheme:dark){:root{--bg:#121311;--ink:#ecece6;--muted:#9a9a92;--card:#1c1e1b;--line:#32352f;--accent:#7fc4ae;--accent2:#7fc4ae;--mark:#6b5a00;--code:#0b0c0f}}
+*{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:72px}
+body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.9 system-ui,-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif}
+#bar{position:fixed;top:0;left:0;height:3px;width:0;background:var(--accent2);z-index:50}
+.top{position:sticky;top:0;z-index:40;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);padding:10px 20px;font-size:.85rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hero{position:relative;overflow:hidden;background:#0f1117;color:#fff;padding:64px 20px 56px}
+.hero::before{content:"";position:absolute;inset:0;background-image:linear-gradient(rgba(47,213,180,.14) 1px,transparent 1px),linear-gradient(90deg,rgba(47,213,180,.14) 1px,transparent 1px);background-size:34px 34px;animation:grid 30s linear infinite}
+.hero::after{content:"";position:absolute;inset:auto 0 0 0;height:40%;background:linear-gradient(transparent,#0f1117)}
+@keyframes grid{to{background-position:34px 34px}}
+.hero .in{position:relative;z-index:1;max-width:760px;margin:0 auto}
+.pill{display:inline-block;font:700 .75rem/1 ui-monospace,monospace;letter-spacing:.08em;color:#0f1117;background:#2fd5b4;border-radius:99px;padding:6px 12px;margin-bottom:18px}
+.hero h1{font-size:clamp(1.6rem,5.2vw,2.4rem);line-height:1.4;margin:0}
+.hero h1 mark{background:linear-gradient(transparent 62%,rgba(47,213,180,.55) 62%);color:#fff;padding:0 .1em;background-size:0 100%;background-repeat:no-repeat;animation:mk .9s .3s forwards}
+@keyframes mk{to{background-size:100% 100%}}
+.wrap{max-width:760px;margin:0 auto;padding:0 20px 80px}
+.origin{margin:24px 0 0;padding:10px 16px;background:var(--card);border:1px solid var(--line);border-radius:10px;font-size:.9rem;color:var(--muted)}
+.toc{margin:28px 0 8px;padding:16px 20px;background:var(--card);border:1px solid var(--line);border-radius:12px}
+.toc b{font-size:.8rem;color:var(--muted);letter-spacing:.1em}.toc ol{margin:8px 0 0;padding-left:1.3em}
+.toc a,.sec a,.origin a{color:var(--accent);text-decoration:none;background:linear-gradient(currentColor,currentColor) 0 100%/0 2px no-repeat;transition:background-size .3s}
+.toc a:hover,.sec a:hover{background-size:100% 2px}
+.lead{font-size:1.05rem;color:var(--ink)}
+.sec{margin:44px 0;opacity:0;transform:translateY(14px);transition:opacity .6s,transform .6s}.sec.in{opacity:1;transform:none}
+.sec h2{font-size:1.45rem;line-height:1.5;margin:0 0 14px;padding-left:14px;border-left:5px solid var(--accent2)}
+.sec h3{font-size:1.15rem;margin:30px 0 8px}
+p{margin:0 0 1.1em}
+strong{background:linear-gradient(transparent 62%,var(--mark) 62%) 0 0/0 100% no-repeat;transition:background-size .8s .2s}.in strong,.in.sec strong{background-size:100% 100%}
+code{background:color-mix(in srgb,var(--accent) 12%,transparent);padding:.1em .4em;border-radius:5px;font-size:.88em;overflow-wrap:anywhere;word-break:break-all}
+pre{position:relative;background:var(--code);color:var(--codefg);padding:16px;border-radius:10px;overflow:auto;font-size:.82rem;line-height:1.65;margin:0 0 1.4em}
+pre code{background:none;padding:0;overflow-wrap:normal;word-break:normal}
+.cp{position:absolute;top:8px;right:8px;font:inherit;font-size:.72rem;border:0;border-radius:6px;padding:4px 10px;background:#ffffff22;color:#fff;cursor:pointer}
+blockquote{margin:0 0 1.2em;padding:12px 16px;background:var(--card);border-left:4px solid var(--line);color:var(--muted);border-radius:0 8px 8px 0}
+ul,ol{padding-left:1.4em;margin:0 0 1.2em}li{margin:.25em 0}
+.tldr{background:var(--card);border:1px solid var(--line);border-top:4px solid var(--accent2);border-radius:12px;padding:20px 22px;box-shadow:0 6px 24px #0000000d}
+.tldr h2{border:0;padding:0}
+.tldr ol{list-style:none;counter-reset:n;padding:0}.tldr li{counter-increment:n;position:relative;padding-left:2.2em;margin:.7em 0}
+.tldr li::before{content:counter(n);position:absolute;left:0;top:.15em;width:1.5em;height:1.5em;border-radius:50%;background:var(--accent);color:var(--bg);font-size:.8em;display:grid;place-items:center;font-weight:700}
+.qa{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 18px;margin:0 0 12px;transition:transform .2s,box-shadow .2s}
+.qa:hover{transform:translateY(-3px);box-shadow:0 10px 24px #0000001a}.qa .q{font-weight:700;margin:0 0 4px}.qa p{margin:0}
+hr{border:0;border-top:1px solid var(--line);margin:32px 0}
+.panel{max-width:760px;margin:16px auto;padding:10px 20px;background:#fff8e1;color:#222;border:1px solid #e0c060;border-radius:10px;font-size:.9rem}
+.panel .error{color:#b3261e}.panel .warn{color:#8a5a00}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}.sec{opacity:1;transform:none}strong{background-size:100% 100%}.hero h1 mark{background-size:100% 100%}}
+</style><div id="bar"></div>
+<div class="top">Stripe「product tax code is missing」400の原因と対処【Managed Payments】</div>
+<header class="hero"><div class="in"><span class="pill">実録・つまずきメモ</span><h1>Stripe「<mark>product tax code is missing</mark>」400の原因と対処【Managed Payments】</h1></div></header>
+<main class="wrap"><aside class="origin">この記事は <a href="https://note.com/livelybbbbb/n/n7cf908d5f667" rel="noopener">note</a> でも公開しています。</aside><nav class="toc"><b>目次</b><ol><li><a href="#s1">30秒で分かる結論</a></li><li><a href="#s2">実際に出たエラー文</a></li><li><a href="#s3">原因の見分け方</a></li><li><a href="#s4">Managed Payments とは</a></li><li><a href="#s5">直し方</a></li><li><a href="#s6">どちらを選ぶか</a></li><li><a href="#s7">よくある質問</a></li><li><a href="#s8">再発防止</a></li><li><a href="#s9">参考</a></li><li><a href="#s10">このシリーズについて</a></li></ol></nav><div class="lead"><p>Stripe の Checkout Session を API で作ったら、いきなり <strong>400 エラー</strong>。</p>
+<pre>
+Invalid line_items[0]: the product tax code is missing.
+</pre>
+<p>商品名も価格も、ちゃんと送っています。税金の設定なんて、していません。なのに、なぜ?</p>
+<p>原因は、コードではありませんでした。<strong>アカウントで、既定で有効になっていた「Managed Payments」</strong> です。そして、エラー文を最後まで読むと、<strong>直し方まで書いてありました。</strong></p>
+<p>この記事では、実際に出たエラー文、2つの直し方、どちらを選ぶかの考え方を、Python のコードつきで書きます。</p>
+<p><strong>こんな人に向けた記事です</strong></p>
+<ul>
+<li>Stripe Checkout Session を、API(Python など)で作っていて、400 になった</li>
+<li>「product tax code is missing」「Managed Payments」の意味が分からない</li>
+<li>サンドボックスで試しているのに、税コードを求められて戸惑っている</li>
+</ul>
+<blockquote>執筆時点: 2026年10月。Stripe の仕様や画面は変わることがあります。最新は、公式ドキュメントで確認してください。</blockquote>
+<blockquote>この記事は、AI アシスタントと一緒に作業した記録(実際のログと画面)をもとに、AI の助けを借りて書き、私が内容を確認しました。</blockquote>
+</div><section class="sec tldr"><h2 id="s1">30秒で分かる結論</h2>
+<ol>
+<li><strong>原因</strong>: アカウントで Managed Payments が既定で有効になっていて、この機能では、<strong>商品の税コードが必須</strong>。</li>
+<li><strong>直し方A</strong>: その決済だけ、<code>managed_payments[enabled]=false</code> を送って、無効にする。(私が選んだ方法。決済は通った)</li>
+<li><strong>直し方B</strong>: 商品に、<strong>対象の税コード</strong>(<code>txcd_...</code>)を付ける方法もあるようです。公式の利用資格ページに、対象の一覧があります。(私は試していません)</li>
+<li>どちらを選ぶかで、<strong>販売者の扱いや税金の扱いが変わる</strong>可能性がある。選ぶ前に、「どちらを選ぶか」の項を読む。</li>
+</ol>
+</section><section class="sec"><h2 id="s2">実際に出たエラー文</h2>
+<p>サーバーのログに、Stripe の返事の本文を出してみると、こう書いてありました(長いので、途中までです)。</p>
+<pre>
+Stripe 400: {
+  &quot;error&quot;: {
+    &quot;message&quot;: &quot;Invalid line_items[0]: the product tax code is missing.
+      Set the product&#x27;s tax_code field to an eligible product tax code (more details: ...).
+      Product tax code is required for Managed Payments, which is enabled by default on your account.
+      If you want to disable Managed Payments on this session, you can pass managed_payments[enabled]=false.
+      You can configure whether Managed Paymen...
+</pre>
+<p>読み取れることは、次の4つです。</p>
+<ol>
+<li>商品の<strong>税コードが、ありません</strong>。</li>
+<li><strong>Managed Payments には、税コードが必要</strong>です。</li>
+<li>Managed Payments は、<strong>このアカウントで、既定で有効</strong>です。</li>
+<li>この決済だけ無効にするなら、<strong><code>managed_payments[enabled]=false</code></strong> を渡せます。</li>
+</ol>
+</section><section class="sec"><h2 id="s3">原因の見分け方</h2>
+<ul>
+<li>私のコードは、商品名と価格だけを送っていて、税コードは送っていませんでした。</li>
+<li>税コードを使う設定は、していません。それなのに「Managed Payments が既定で有効」と言われたので、<strong>アカウント側の設定</strong>が原因だと分かりました。</li>
+<li>ここで効いたのは、<strong>Stripe の返事の本文を、ログに出していた</strong>ことです。最初は <code>HTTP Error 400</code> としか出ず、理由が分かりませんでした。</li>
+</ul>
+<pre>
+try:
+    with urllib.request.urlopen(req, timeout=15) as r:
+        return json.loads(r.read())[&quot;url&quot;]
+except urllib.error.HTTPError as e:
+    # Stripe のエラー本文(理由)をログに残す。API キーは含まれない
+    raise RuntimeError(f&quot;Stripe {e.code}: {e.read()[:500].decode(&#x27;utf-8&#x27;, &#x27;replace&#x27;)}&quot;) from None
+</pre>
+</section><section class="sec"><h2 id="s4">Managed Payments とは</h2>
+<p>この記事では、<strong>確認できたことだけ</strong>を書きます。</p>
+<ul>
+<li>Stripe のエラー文によると、Managed Payments には<strong>商品の税コードが必要</strong>で、私のアカウントでは<strong>既定で有効</strong>になっていました。</li>
+<li>Stripe 公式の「利用資格」ページに、<strong>対象の税コードの一覧</strong>があります。</li>
+</ul>
+<p>Managed Payments の仕組みの詳しい説明(販売者の扱い、税金の扱いなど)は、この記事では扱いません。公式のドキュメントで確認してください。</p>
+<p>公式の<strong>「利用資格」ページ</strong>には、<strong>対象の税コードの一覧</strong>がありました(確認済み)。たとえば、次のような行があります。</p>
+<ul>
+<li><code>txcd_10000000</code> … General - Electronically Supplied Services</li>
+<li><code>txcd_10010001</code> … Infrastructure as a service (IaaS) - personal use</li>
+<li><code>txcd_10101000</code> … Infrastructure as a service (IaaS) - business use</li>
+</ul>
+<p><code>txcd_10000000</code> の説明には、「インターネット経由で、人の手をほとんど介さずに提供されるデジタルサービス」とありました。さらに、「<strong>ソフトウェア、デジタル商品、クラウドサービス、ウェブサイトサービスのような、より具体的なカテゴリを検討してください</strong>」という趣旨の案内もありました。</p>
+</section><section class="sec"><h2 id="s5">直し方</h2>
+<h3>直し方A: この決済では、Managed Payments を無効にする(私が選んだ方法)</h3>
+<p>Checkout Session を作るときに、<code>managed_payments[enabled]=false</code> を送ります。</p>
+<pre>
+form = {
+    &quot;mode&quot;: &quot;payment&quot;,
+    &quot;success_url&quot;: &quot;https://example.com/thanks&quot;,
+    &quot;cancel_url&quot;: &quot;https://example.com/&quot;,
+    # 自分が販売者として売る前提。Managed Payments は無効にする
+    &quot;managed_payments[enabled]&quot;: &quot;false&quot;,
+    &quot;line_items[0][quantity]&quot;: &quot;1&quot;,
+    &quot;line_items[0][price_data][currency]&quot;: &quot;jpy&quot;,
+    &quot;line_items[0][price_data][unit_amount]&quot;: &quot;1980&quot;,
+    &quot;line_items[0][price_data][product_data][name]&quot;: &quot;Starter Guide&quot;,
+}
+</pre>
+<p>これで、決済画面に進めて、テストカードで支払いが通りました(サンドボックス環境、日本円)。</p>
+<h3>直し方B: 商品に、対象の税コードを付ける</h3>
+<p>利用資格ページの一覧から、<strong>自分の商品に合う税コード</strong>を選んで、商品に付ける方法もあるようです。</p>
+<p><strong>私は、この方法を試していないので、具体的なやり方や結果は書けません。</strong> 税コードの指定方法(API のパラメータ名など)は、Stripe の公式ドキュメントで確認してください。</p>
+<p>どの税コードが、自分の商品に当たるのかは、一覧の説明文を読んで、自分で判断する必要があります。迷う場合は、専門家に確認してください。</p>
+</section><section class="sec"><h2 id="s6">どちらを選ぶか</h2>
+<p>私は、<strong>自分が販売者として売る前提</strong>で、販売ページと、特定商取引法の表記を作っています。そこで、直し方Aを選びました。</p>
+<p>考え方の違いは、次のとおりです。</p>
+<ul>
+<li><strong>A(無効にする)</strong>: Managed Payments を使わない形です。私は、この形で、自分が販売者として売る前提で作っています。</li>
+<li><strong>B(税コードを付ける)</strong>: 私は試していないため、販売者や税金の扱いが、どう変わるのかは書けません。公式のドキュメントや、専門家に確認してください。</li>
+</ul>
+<p>どちらが自分に合うかは、事業の状況によって変わります。<strong>税金や法律の扱いは、税理士や税務署などの専門家に確認してください。</strong> この記事は、そうした助言を含みません。</p>
+</section><section class="sec"><h2 id="s7">よくある質問</h2>
+<div class="qa"><p class="q">Q. サンドボックス(テスト環境)でも、このエラーは出ますか?</p><p>私は、サンドボックスで出ました。</p></div>
+<div class="qa"><p class="q">Q. 税コードを付けないと、必ず失敗しますか?</p><p>私の環境では、失敗しました。無効にすると、決済ページを作れました。税コードを付ける方法は、試していません。</p></div>
+<p><strong>Q. <code>managed_payments[enabled]=false</code> を送ると、何か危険ですか?</strong></p>
+<p>その決済で、Managed Payments を使わない、という指定です。販売者や税金の扱いに、どう影響するかは、私は確認していません。公式のドキュメントや、専門家に確認してください。</p>
+</section><section class="sec"><h2 id="s8">再発防止</h2>
+<ul>
+<li>API のエラーは、<strong>返事の本文まで、ログに出す</strong>。エラー文に、原因と直し方が書いてあることがあります。</li>
+<li>アカウントの設定(今回は、Managed Payments が既定で有効)は、<strong>画面を見るだけでは気づきにくい</strong>。API が返す理由を、手がかりにします。</li>
+</ul>
+</section><section class="sec"><h2 id="s9">参考</h2>
+<ul>
+<li>Stripe 公式の「利用資格」ページ(エラー文の中にもリンクがあります): <code>https://docs.stripe.com/payments/managed-payments/eligibility</code></li>
+</ul>
+</section><section class="sec"><h2 id="s10">このシリーズについて</h2>
+<p>デジタル商品の販売システム(決済 → メール → ダウンロード)を、自前で作ったときの、つまずきを書いています。</p>
+<ul>
+<li>【#1 公開後に、記事のリンクを入れる】Stripe の API キーが入らない(401)</li>
+<li>【#3 公開後にリンク】決済は通ったのに、メールが来ない</li>
+<li>【#4 公開後にリンク】Gmail の SMTP 設定でハマった</li>
+</ul>
+<p>手順書とスターターキットを、準備中です。「読みたい」「ここが知りたい」という声を、コメントや X で、教えてもらえると助かります。</p></section></main>
+<script>
+const bar=document.getElementById('bar');
+addEventListener('scroll',()=>{const h=document.documentElement;bar.style.width=(h.scrollTop/(h.scrollHeight-h.clientHeight||1)*100)+'%'},{passive:true});
+const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}}),{threshold:.12});
+document.querySelectorAll('.sec').forEach(el=>io.observe(el));
+document.querySelectorAll('pre').forEach(pre=>{const b=document.createElement('button');b.className='cp';b.textContent='コピー';
+b.onclick=()=>{navigator.clipboard&&navigator.clipboard.writeText(pre.innerText.replace(/^コピー\n?/,'')).then(()=>{b.textContent='コピーしました';setTimeout(()=>b.textContent='コピー',1500)})};pre.appendChild(b)});
+</script></html>

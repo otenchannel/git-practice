@@ -184,4 +184,8 @@ def build(asset, out):
     doc.build(s)
 
 if __name__ == '__main__':
+    # 任意の第3引数: META を上書きする JSON(氏名・学籍番号など。gitには入れない)
+    if len(sys.argv) > 3:
+        import json
+        META.update(json.load(open(sys.argv[3], encoding='utf-8')))
     build(sys.argv[1], sys.argv[2])

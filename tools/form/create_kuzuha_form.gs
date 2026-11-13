@@ -21,7 +21,7 @@ function createForm() {
   form.addScaleItem().setTitle("体験の前、歴史や史跡(城・台場など)にどの程度関心がありましたか。").setBounds(1, 5).setLabels("関心がない", "関心が高い").setRequired(true);
   form.addPageBreakItem().setTitle("体験の感想").setHelpText("VR体験を終えてから、お答えください。");
   form.addGridItem().setTitle("体験について、あてはまる程度を選んでください。").setRows(["VRの空間の中にいるように感じた", "体験に集中できた", "楠葉台場について、もっと知りたいと思った", "実際に現地を訪れてみたいと思った", "台場の全体の構造が理解できた", "歴史や史跡への関心が高まった"]).setColumns(["1 全くそう思わない", "2", "3", "4", "5 強くそう思う"]).setRequired(true);
-  form.addGridItem().setTitle("このアプリの使いやすさについて、あてはまる程度を選んでください。").setRows(["このシステムを、頻繁に使いたいと思う", "このシステムは、不必要に複雑だと感じた", "このシステムは、使いやすいと思った", "このシステムを使うには、詳しい人のサポートが必要だと思う", "このシステムの各機能は、うまくまとまっていると感じた", "このシステムには、一貫性のない部分が多いと感じた", "ほとんどの人は、このシステムの使い方をすぐに覚えられると思う", "このシステムは、とても扱いにくいと感じた", "このシステムを使うことに、自信があると感じた", "このシステムを使い始める前に、多くのことを学ぶ必要があった"]).setColumns(["1 全くそう思わない", "2", "3", "4", "5 強くそう思う"]).setRequired(true);
+  form.addScaleItem().setTitle("このアプリは、全体として使いやすかったですか。").setBounds(1, 5).setLabels("使いにくかった", "使いやすかった").setRequired(true);
   form.addGridItem().setTitle("体験中・体験後に、次のような症状はありましたか。").setRows(["気分が悪い(吐き気)", "頭痛", "目の疲れ", "めまい", "全体的な不快感"]).setColumns(["なし", "わずか", "中くらい", "強い"]).setRequired(true);
   form.addPageBreakItem().setTitle("復元の各部分の信頼度").setHelpText("ここからは、体験したモデルを思い出して答えてください(モデルは見られません)。\n次の各部分は、どの程度、資料にもとづいていると思いますか。");
   form.addGridItem().setTitle("各部分について、1〜5で選んでください。").setHelpText("1=想像に近い、5=確かな資料がある").setRows(["火薬庫の位置と形", "南面の虎口(出入口)の基礎", "番所の屋根・壁・間取り", "南面・西面が突き出した角(稜堡)の形をしていたこと", "北面の虎口に土橋があったこと", "大砲の種類・口径", "番所の位置と大きさ", "幕末当時の淀川の流れ"]).setColumns(["1 想像に近い", "2", "3", "4", "5 確かな資料がある"]).setRequired(true);
@@ -34,11 +34,10 @@ function createForm() {
   form.addMultipleChoiceItem().setTitle("台場の西側の堀は、何にあたりますか。").setChoiceValues(["付け替えられた川", "用水路", "海につながる堀", "分からない"]).setRequired(true);
   form.addMultipleChoiceItem().setTitle("南の出入口から入って北の出入口へ抜けるとき、途中で通る建物はどれですか。").setChoiceValues(["番所", "火薬庫", "井戸の小屋", "分からない"]).setRequired(true);
   form.addPageBreakItem().setTitle("ご意見");
-  form.addParagraphTextItem().setTitle("体験して、よかった点・分かりにくかった点を教えてください。").setRequired(false);
+  form.addParagraphTextItem().setTitle("体験して、よかった点・分かりにくかった点・ご意見を教えてください。").setRequired(false);
   form.addScaleItem().setTitle("【根拠の色分けや解説があった方のみ】色の意味は、分かりやすかったですか。").setHelpText("根拠の提示がなかった方は、回答しなくて構いません。").setBounds(1, 5).setLabels("分かりにくかった", "分かりやすかった").setRequired(false);
   form.addScaleItem().setTitle("【根拠の色分けや解説があった方のみ】解説は、役に立ちましたか。").setBounds(1, 5).setLabels("役に立たなかった", "役に立った").setRequired(false);
   form.addMultipleChoiceItem().setTitle("【根拠の色分けや解説があった方のみ】解説を読んだ回数は、どのくらいですか。").setChoiceValues(["読んでいない", "1〜2回", "3〜5回", "6回以上"]).setRequired(false);
-  form.addParagraphTextItem().setTitle("その他、ご意見があればお書きください。").setRequired(false);
   Logger.log('編集用URL: ' + form.getEditUrl());
   Logger.log('回答用URL: ' + form.getPublishedUrl());
 }

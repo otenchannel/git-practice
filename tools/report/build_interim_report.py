@@ -153,8 +153,8 @@ def build(asset, out):
           Table([[img(A('top_nat.png'), W * 0.4), img(A('top_ev.png'), W * 0.4)]], colWidths=[W * 0.5] * 2),
           caption('図1 真上から見た全体。左: 自然色版、右: 根拠色分け版(橙=土塁、青=堀、灰青=河川側、ピンク=門・橋・建物)。Unity内でTabキーにより切り替えられる。'),
           Spacer(1, 3),
-          Table([[img(A('tab_ev.png'), W * 0.495), img(A('tab_nat.png'), W * 0.495)]], colWidths=[W * 0.5] * 2),
-          caption('図2 同じ位置・向きで、Tabキーを押して切り替えたときの画面(左: 根拠の色分け、右: 自然色)。条件Bでは左、条件Aでは右が表示される。'),
+          Table([[img(A('tab_nat.png'), W * 0.495), img(A('tab_ev.png'), W * 0.495)]], colWidths=[W * 0.5] * 2),
+          caption('図2 同じ位置・向きで、Tabキーを押して切り替えたときの画面(左: 自然色、右: 根拠の色分け)。条件Aでは左、条件Bでは右が表示される。'),
           Spacer(1, 3),
           Table([[img(A('game_gate.png'), W * 0.495), img(A('game_gate2.png'), W * 0.495)]], colWidths=[W * 0.5] * 2),
           caption('図3 現地スケールで歩いたときの画面(左: 虎口の通路と両側の石積み、右: 虎口の門と石積み)。')]
